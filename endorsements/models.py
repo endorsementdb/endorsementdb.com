@@ -1,7 +1,6 @@
 from __future__ import unicode_literals
 import shutil
 
-import boto
 from django.db import models
 from django.urls import reverse
 import requests
@@ -196,6 +195,8 @@ class Account(models.Model):
     get_profile_image.short_description = 'Profile image'
 
     def save_image_to_s3(self):
+        """TODO"""
+        import boto
         s3_connection = boto.connect_s3()
         bucket = s3_connection.get_bucket('endorsementdb.com')
 
