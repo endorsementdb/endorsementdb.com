@@ -61,6 +61,30 @@ you to filter and sort arbitrarily:
   * Ability to filter comments by candidate
 * Add in all the endorsements on the Wikipedia pages that have a valid source
 
+## Setup instructions
+
+1. Clone this repository
+2. Set up a virtualenv or otherwise install the requirements with pip (`pip
+   install -r requirements.txt`
+3. Edit elections/settings.py to set the following variables (or set them as
+   environment variables):
+   * [`SECRET_KEY`][SECRET_KEY]: a random key used for securing session
+   * `DB_USER`, `DB_NAME`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT` according to your
+     database setup (if you don't already have one, you can just [use sqlite])
+4. Run `django manage.py migrate`
+5. Run `django manage.py loaddata endorsements.json` to load all the
+   endorsement-related data that I have so far
+6. Run `python manage.py runserver` and navigate to http://localhost:8000
+
+(I may be missing steps here -- feel free to correct this.)
+
+## Get involved
+
+This is a pretty monumental undertaking, and I could use all the help I can
+get. Tweet me [@endorsementdb] or send me an email at admin@endorsementdb.com
+if you want to get involved in any way! Alternatively, feel free to open an
+issue or send a pull request.
+
 ## About
 
 I decided to create this after seeing tons of endorsement-related stories pop
@@ -93,12 +117,6 @@ documenting things for posterity, they aren't so great for the casual reader
 who just wants the CliffNotes version but instead gets hit in the face by a
 thousand bullet points and twice as many references.)
 
-## Get involved
-
-This is a pretty monumental undertaking, and I could use all the help I can
-get. Tweet me [@endorsementdb] or send me an email at admin@endorsementdb.com
-if you want to get involved in any way!
-
 ## Credits
 
 Built by [@dellsystem], with contributions from [@tlornewr]. Released under
@@ -118,3 +136,5 @@ beyond.)
 [Macromeasures]: https://macromeasures.com
 [@dellsystem]: https://twitter.com/dellsystem
 [@tlornewr]: https://twitter.com/tlornewr
+[SECRET_KEY]: https://docs.djangoproject.com/en/1.10/ref/settings/#std:setting-SECRET_KEY
+[use sqlite]: https://docs.djangoproject.com/en/1.10/ref/settings/#databases
