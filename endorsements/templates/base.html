@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Election 2016 Endorsements</title>
+        <link rel="stylesheet"
+              href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.2.6/semantic.min.css"/>
+        <style type="text/css">
+        .edit-buttons {
+            float: right;
+            margin-top: 20px;
+        }
+        blockquote {
+            quotes: "\201C""\201D";
+            line-height: 1.5em;
+            margin-right: 0;
+            border-left: 5px solid #ddd;
+            padding-left: 5px;
+            margin-left: 10px;
+        }
+        blockquote:before {
+          color: #aaa;
+          content: open-quote;
+          font-size: 3em;
+          line-height: 0.1em;
+          vertical-align: -0.4em;
+          margin-left: -30px;
+          margin-right: 15px;
+        }
+        blockquote footer {
+          text-align: right;
+        }
+        blockquote p {
+            display: inline;
+        }
+        </style>
+    </head>
+    <body>
+        <div class="ui container">
+            <br />
+            <div class="ui breadcrumbs">
+                {% block breadcrumbs %}
+                {% endblock %}
+            </div>
+            <br />
+            <div class="ui grid">
+                <div class="ten wide column">
+                    <h1>{% block title %}{% endblock %}</h1>
+                </div>
+                <div class="six wide right aligned column">
+                    {% block buttons %}
+                    {% endblock %}
+                </div>
+            </div>
+            <br />
+            {% for message in messages %}
+            <div class="ui {{ message.tags }} message">
+                {{ message }}
+            </div>
+            {% endfor %}
+            <br />
+            {% block content %}
+            {% endblock %}
+            <div class="ui center aligned footer basic segment">
+                <a href="{% url 'admin:index' %}">Admin</a>
+            </div>
+        </div>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.js" type="text/javascript"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.2.6/semantic.min.js" type="text/javascript"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.0.3/vue.min.js" type="text/javascript"></script>
+        <script type="text/javascript">
+            $('.ui.accordion').accordion();
+        </script>
+        {% block scripts %}
+        {% endblock %}
+    </body>
+</html>

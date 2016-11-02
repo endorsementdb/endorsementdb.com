@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Random Endorser{% endblock %}
+
+{% block buttons %}
+<a class="ui blue icon button"
+   href="{% url 'random-endorser' %}">
+    <i class="shuffle icon"></i>
+    Another random endorser
+</a>
+{% endblock %}
+
+{% block content %}
+
+<div class="ui horizontally divided grid">
+    <div class="six wide column">
+        <div class="ui header">
+            {{ endorser.name }}
+            {% if not endorser.is_personal %}
+            <div class="ui black label">Organization</div>
+            {% endif %}
+            {% if endorser.url %}
+            <div class="sub header">
+                {{ endorser.url|urlize }}
+            </div>
+            {% endif %}
+        </div>
+
+        {% if endorser.description %}
+        <p>
+            {{ endorser.description }}
+        </p>
+        {% endif %}
+
+        {% include "accounts_snippet.html" with accounts=endorser.account_set.all compact=True %}
+    </div>
+    <div class="ten wide column">
+        {% with endorsements=endorser.endorsement_set.all %}
+        {% if endorsements.count %}
+        {% include "endorsements_snippet.html" with endorsements=endorsements compact=True %}
+        {% endif %}
+        {% endwith %}
+    </div>
+</div>
+
+{% endblock %}

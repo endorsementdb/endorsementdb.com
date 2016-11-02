@@ -1,0 +1,296 @@
+import json
+import random
+
+from django.contrib import messages
+from django.http import Http404, JsonResponse
+from django.shortcuts import redirect, render, get_object_or_404
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+
+from endorsements.forms import EndorsementForm, SourceForm, \
+                               PersonalTagForm, \
+                               OrganizationTagForm, \
+                               TagFilterForm
+from endorsements.models import Account, Endorser, Candidate, Source, Quote, \
+                                Tag, Endorsement, Category
+from endorsements.templatetags.endorsement_extras import shorten
+
+
+def get_endorsers(filter_params, sort_params):
+    filters = {}
+    gender = filter_params.get('gender')
+    if gender == 'personal':
+        filters['is_personal'] = True
+    elif gender == 'organisation':
+        filters['is_personal'] = False
+    elif gender == 'female':
+        filters['tags'] = Tag.objects.get(name='Female')
+    elif gender == 'male':
+        filters['tags'] = Tag.objects.get(name='Male')
+
+    if filters:
+        endorser_query = Endorser.objects.filter(**filters)
+    else:
+        endorser_query = Endorser.objects.all()
+
+    sort_value = sort_params.get('value')
+    sort_key = None
+    if sort_value == 'most':
+        sort_key = '-max_followers'
+    elif sort_value == 'least':
+        sort_key = 'max_followers'
+    elif sort_value == 'newest':
+        sort_key = 'endorsement'
+    elif sort_value == 'oldest':
+        sort_key = '-endorsement'
+    elif sort_value == 'az':
+        sort_key = 'name'
+    elif sort_value == 'za':
+        sort_key = '-name'
+
+    if sort_key:
+        endorser_query = endorser_query.order_by(sort_key).distinct()
+
+    category_names = {}
+    for tag in Tag.objects.all().prefetch_related('category'):
+        category_names[tag.pk] = tag.category.name
+
+    positions = {}
+
+    # Figure out which endorsers are also candidates.
+    candidate_endorser_pks = set()
+    for candidate in Candidate.objects.values('endorser_link'):
+        candidate_endorser_pks.add(candidate['endorser_link'])
+
+    endorser_query = endorser_query.prefetch_related(
+        'tags'
+    ).prefetch_related(
+        'endorsement_set__position'
+    ).prefetch_related(
+        'endorsement_set__quote'
+    ).prefetch_related(
+        'endorsement_set__quote__source'
+    ).prefetch_related(
+        'endorsement_set__quote__event'
+    ).prefetch_related(
+        'account_set'
+    )
+    endorsers = []
+    for endorser in endorser_query:
+        tags = []
+        for tag in endorser.tags.all():
+            tags.append({
+                'name': tag.name,
+                'description': tag.description,
+                'category': category_names[tag.pk],
+            })
+
+        endorsements = []
+        for i, endorsement in enumerate(endorser.endorsement_set.all()):
+            if i == 0:
+                display = endorsement.position.get_present_display()
+            else:
+                display = endorsement.position.get_past_display()
+
+            quote = endorsement.quote
+            source = quote.source
+            endorsements.append({
+                'colour': endorsement.position.colour,
+                'display': display,
+                'quote': quote.text,
+                'context': quote.context,
+                'event_context': quote.get_event_context(),
+                'event': quote.event.name if quote.event else '',
+                'date': quote.date.strftime('%b %d, %Y'),
+                'source_url': source.url,
+                'source_date': source.date.strftime('%b %d, %Y'),
+                'source_name': source.name,
+            })
+
+        accounts = []
+        for account in endorser.account_set.all():
+            accounts.append({
+                'username': account.screen_name,
+                'num_followers': shorten(account.followers_count),
+            })
+
+        # Don't bother checking if it's a candidate unless there are no
+        # endorsements.
+        is_candidate = False
+        if not endorsements and endorser.pk in candidate_endorser_pks:
+            is_candidate = True
+
+        endorsers.append({
+            'image': endorser.get_image_url(),
+            'pk': endorser.pk,
+            'name': endorser.name,
+            'url': endorser.url,
+            'description': endorser.description,
+            'tags': tags,
+            'endorsements': endorsements,
+            'accounts': accounts,
+            'is_candidate': is_candidate,
+            'absolute_url': endorser.get_absolute_url(),
+        })
+
+    return endorsers
+
+@require_POST
+@csrf_exempt
+def get_endorsements(request):
+    params = None
+    if request.body:
+        try:
+            params = json.loads(request.body)
+        except ValueError:
+            pass
+
+    if params is not None:
+        filter_params = params.get('filter')
+        if not filter_params or type(filter_params) != dict:
+            return JsonResponse({
+                'error': True,
+                'message': 'Need "filter" key with a dict value',
+            })
+
+        sort_params = params.get('sort')
+        if not sort_params or type(sort_params) != dict:
+            return JsonResponse({
+                'error': True,
+                'message': 'Need "sort" key with a dict value',
+            })
+    else:
+        filter_params = {}
+        sort_params = {}
+
+    endorsers = get_endorsers(filter_params, sort_params)
+
+    return JsonResponse({
+        'endorsers': endorsers,
+        'error': False
+    })
+
+
+def index(request):
+    context = {}
+    return render(request, 'index.html', context)
+
+
+@require_POST
+def add_endorser(request):
+    username = request.POST.get('username')
+
+    account = Account.objects.get_from_username(username)
+    if account is None:
+        messages.add_message(
+            request,
+            messages.ERROR,
+            u'Could not get user for {username}'.format(
+                username=username
+            )
+        )
+
+    # Redirect to the page for editing the endorser object.
+    return redirect('view-endorser', pk=account.endorser.pk)
+
+
+def view_endorser(request, pk):
+    endorser = get_object_or_404(Endorser, pk=pk)
+    endorsement_form = EndorsementForm()
+
+    context = {
+        'endorser': endorser,
+        'endorsement_form': endorsement_form,
+    }
+
+    return render(request, 'view.html', context)
+
+
+@require_POST
+def add_account(request, pk):
+    endorser = get_object_or_404(Endorser, pk=pk)
+    username = request.POST.get('username')
+    account = Account.objects.get_from_username(username, endorser=endorser)
+    if account:
+        messages.add_message(
+            request,
+            messages.SUCCESS,
+            u'Added the account @{username}'.format(
+                username=username
+            )
+        )
+
+    return redirect('view-endorser', pk=pk)
+
+
+@require_POST
+def add_endorsement(request, pk):
+    endorser = get_object_or_404(Endorser, pk=pk)
+
+    form = EndorsementForm(request.POST)
+    if not form.is_valid():
+        messages.add_message(
+            request,
+            messages.ERROR,
+            u'Not valid form'
+        )
+        return redirect('view-endorser', pk=pk)
+
+    # First, create the source, or get it if it already exists.
+    source_url = form.cleaned_data['source_url']
+    source_date = form.cleaned_data['date']
+    source_name = form.cleaned_data['source_name']
+    try:
+        source = Source.objects.get(url=source_url)
+    except Source.DoesNotExist:
+        source = Source.objects.create(
+            date=source_date,
+            url=source_url,
+            name=source_name
+        )
+
+    quote_text = form.cleaned_data['quote']
+    quote_context = form.cleaned_data['context']
+    quote_event = form.cleaned_data['event']
+    try:
+        quote = Quote.objects.get(
+            source=source,
+            text=quote_text,
+        )
+    except Quote.DoesNotExist:
+        quote = Quote.objects.create(
+            source=source,
+            text=quote_text,
+            context=quote_context,
+            date=source_date,
+            event=quote_event,
+        )
+
+    position = form.cleaned_data['position']
+    endorsement = Endorsement.objects.create(
+        position=position,
+        endorser=endorser,
+        quote=quote
+    )
+
+    messages.add_message(
+        request,
+        messages.SUCCESS,
+        u'Added endorsement',
+    )
+
+    return redirect('view-endorser', pk=pk)
+
+def random_endorser(request):
+    endorser_count = Endorser.objects.count()
+    random_endorser_index = random.randint(0, endorser_count - 1)
+    random_endorser = Endorser.objects.all()[random_endorser_index]
+
+    context = {
+        'endorser': random_endorser,
+    }
+    return render(request, 'random_endorser.html', context)
+
+def charts(request):
+    context = {}
+    return render(request, 'charts.html', context)

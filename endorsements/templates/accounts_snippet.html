@@ -1,0 +1,26 @@
+{% load humanize %}
+{% load endorsement_extras %}
+
+<div class="ui list">
+{% for account in accounts %}
+    <div class="item">
+        <div class="content">
+            <i class="twitter icon"></i>
+            <a href="{{ account.get_absolute_url }}">
+                <strong>@{{ account.screen_name }}</strong>
+            </a>
+            -
+            <span title="{{ account.followers_count|intcomma }}
+                         as of date">
+                {{ account.followers_count|shorten }} followers
+            </span>
+            {% if request.user.is_stafff %}
+            <a class="ui compact blue mini icon button"
+               href="{% url 'admin:endorsements_account_change' account.pk %}">
+                <i class="edit icon"></i>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+{% endfor %}
+</div>

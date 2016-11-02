@@ -1,0 +1,10 @@
+{% if request.user.is_staff %}
+<form class="ui action input" method="post" action="{% url 'add-endorser' %}">
+    <input type="text" placeholder="Username" name="username" />
+    <button type="submit" class="ui green icon button">
+        <i class="user icon"></i>
+        Add endorser
+    </button>
+    {% csrf_token %}
+</form>
+{% endif %}

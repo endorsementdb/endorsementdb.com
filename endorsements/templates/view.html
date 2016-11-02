@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}{{ endorser.name }}{% endblock %}
+
+{% block buttons %}
+{% include "add_endorser_snippet.html" %}
+{% endblock %}
+
+{% block breadcrumbs %}
+<a class="section" href="{% url 'index' %}">Home</a>
+<i class="right angle icon divider"></i>
+View endorser
+{% endblock %}
+
+{% block content %}
+<div class="ui grid">
+    <div class="four wide column">
+        <div class="ui rounded fluid image">
+            <img src="{{ endorser.get_image_url }}" />
+        </div>
+    </div>
+    <div class="seven wide column">
+        <div class="ui segment">
+            <h2>
+                {{ endorser.name }}
+                {% if request.user.is_staff %}
+                <a href="{% url 'admin:endorsements_endorser_change' endorser.pk %}"
+                   class="ui mini blue icon button">
+                    <i class="edit icon"></i>
+                </a>
+                {% endif %}
+            </h2>
+            <p>{{ endorser.description }}</p>
+            <p>{{ endorser.max_followers }} followers</p>
+            {% if endorser.url %}
+            <p>{{ endorser.url|urlize }}</p>
+            {% endif %}
+            {% if endorser.tags.count %}
+            <div class="ui divider"></div>
+            <div class="ui labels">
+                {% for tag in endorser.tags.all %}
+                <div class="ui label">{{ tag }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="five wide column">
+        <div class="ui segment">
+            {% include "accounts_snippet.html" with accounts=endorser.account_set.all %}
+            <form class="ui action input" method="post" action="{% url 'add-account' endorser.pk %}">
+                <input type="text" placeholder="Username" name="username" />
+                <button type="submit" class="ui green icon button">
+                    <i class="plus icon"></i>
+                </button>
+                {% csrf_token %}
+            </form>
+        </div>
+    </div>
+</div>
+<div class="ui segment">
+    {% include "endorsements_snippet.html" with endorsements=endorser.endorsement_set.all %}
+    <div class="ui divider"></div>
+    <form class="ui form" method="post"
+          action="{% url 'add-endorsement' pk=endorser.pk %}">
+        {% csrf_token %}
+        <div class="ui fields">
+            <div class="five wide field">
+                <label>Position</label>
+                {{ endorsement_form.position }}
+            </div>
+            <div class="three wide field">
+                <label>Date</label>
+                {{ endorsement_form.date }}
+            </div>
+            <div class="five wide field">
+                <label>Event</label>
+                {{ endorsement_form.event }}
+            </div>
+            <div class="three wide field">
+                <label>Source</label>
+                {{ endorsement_form.source_name }}
+            </div>
+        </div>
+        <div class="ui field">
+            <label>URL</label>
+            {{ endorsement_form.source_url }}
+        </div>
+        <div class="ui field">
+            <label>Context</label>
+            {{ endorsement_form.context }}
+        </div>
+        <div class="ui field">
+            <label>Quote</label>
+            {{ endorsement_form.quote }}
+        </div>
+        <div class="ui center aligned basic segment">
+            <button type="submit" class="ui green icon submit button">
+                <i class="plus icon"></i>
+                Add endorsement
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

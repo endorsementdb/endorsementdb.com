@@ -1,0 +1,6 @@
+db.sqlite3
+*.pyc
+*.swp
+endorsements/migrations
+*.swo
+backups

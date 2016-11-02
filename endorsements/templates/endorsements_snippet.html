@@ -1,0 +1,61 @@
+{% if endorsements.count %}
+<div class="ui fluid accordion">
+{% for endorsement in endorsements %}
+    <div class="{% if forloop.first %}active {% endif %}title">
+        <i class="dropdown icon"></i>
+
+        <div class="ui {{ endorsement.position.colour }} label">
+            {% if forloop.first %}
+            {{ endorsement.position.get_present_display }}
+            {% else %}
+            {{ endorsement.position.get_past_display }}
+            {% endif %}
+        </div>
+
+        as of
+        {% with quote=endorsement.quote %}
+        {{ quote.date }}
+    </div>
+    <div class="content">
+        <blockquote cite="{{ quote.source.url }}">
+            {% with event_context=quote.get_event_context %}
+            {% if event_context %}
+            <p><em>[{{ event_context }} {{ quote.event }}]</em></p>
+            <br /><br />
+            {% endif %}
+            {% endwith %}
+            {% if quote.context %}
+            <p><em>[{{ quote.context }}]</em></p>
+            <br /><br />
+            {% endif %}
+            <p>{{ quote.text }}</p>
+            <footer>
+                <cite>
+                    &mdash;
+                    <a href="{{ quote.source.url }}">
+                        {{ quote.source.name }}
+                        <i class="external link icon"></i>
+                    </a>
+                    {% if quote.date != quote.source.date %}
+                    (published {{ quote.source.date }})
+                    {% endif %}
+                    {% if request.user.is_staff %}
+                    <a href="{% url 'admin:endorsements_quote_change' quote.pk %}"
+                       class="ui mini blue icon button">
+                        <i class="edit icon"></i>
+                    </a>
+                    {% endif %}
+                </cite>
+            </footer>
+        </blockquote>
+    </div>
+    {% endwith %}
+{% endfor %}
+</div>
+{% else %}
+    {% if endorser.candidate %}
+        <h3>Current candidate</h3>
+    {% else %}
+        <h3>No endorsements yet</h3>
+    {% endif %}
+{% endif %}
