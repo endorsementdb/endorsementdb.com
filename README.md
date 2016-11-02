@@ -1,5 +1,7 @@
 # [EndorsementDB.com]
 
+![Please excuse the cheesiness of this logo][logo]
+
 _Follow us on Twitter at [@endorsementdb]_
 
 A non-partisan attempt to keep track of endorsements in the 2016 presidential
@@ -13,7 +15,7 @@ you to filter and sort arbitrarily:
 * [List of Jill Stein presidential campaign endorsements, 2016][stein]
 * [List of Gary Johnson presidential campaign endorsements, 2016][johnson]
 
-## Current features
+## Features
 
 * Can browse endorsements from close to 500 entities (celebrities, politicians,
   newspapers, etc), including:
@@ -106,6 +108,7 @@ Hosting and development sponsored by [Macromeasures]. (We're a startup focused
 on extracting meaning out of social data, with applications in politics and
 beyond.)
 
+[logo]: https://s3.amazonaws.com/endorsementdb.com/images/endorsementdb.png
 [EndorsementDB.com]: http://endorsementdb.com
 [clinton]: https://en.wikipedia.org/wiki/List_of_Hillary_Clinton_presidential_campaign_endorsements,_2016
 [trump]: https://en.wikipedia.org/wiki/List_of_Donald_Trump_presidential_campaign_endorsements,_2016
