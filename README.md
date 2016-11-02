@@ -70,7 +70,8 @@ you to filter and sort arbitrarily:
    environment variables):
    * [`SECRET_KEY`][SECRET_KEY]: a random key used for securing session
    * `DB_USER`, `DB_NAME`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT` according to your
-     database setup (if you don't already have one, you can just [use sqlite])
+     database setup (if you don't already have one, you can just [use sqlite];
+     if you want to use PostgreSQL, you'll need to install `psycopg2`)
 4. Run `django manage.py migrate`
 5. Run `django manage.py loaddata endorsements.json` to load all the
    endorsement-related data that I have so far
