@@ -25,6 +25,7 @@ urlpatterns = [
     url(r'^$', endorsements.views.index, name='index'),
     url(r'^api/endorsements.json', endorsements.views.get_endorsements,
         name='get-endorsements'),
+    url(r'^api/tags.json', endorsements.views.get_tags, name='get_tags'),
     url(r'^endorser/$', endorsements.views.add_endorser,
         name='add-endorser'),
     url(r'^endorser/(?P<pk>\d+)/$', endorsements.views.view_endorser,

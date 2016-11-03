@@ -1,3 +1,4 @@
+import collections
 import json
 import random
 
@@ -12,26 +13,37 @@ from endorsements.forms import EndorsementForm, SourceForm, \
                                OrganizationTagForm, \
                                TagFilterForm
 from endorsements.models import Account, Endorser, Candidate, Source, Quote, \
-                                Tag, Endorsement, Category
+                                Tag, Endorsement, Category, Position
 from endorsements.templatetags.endorsement_extras import shorten
 
 
 def get_endorsers(filter_params, sort_params):
     filters = {}
-    gender = filter_params.get('gender')
-    if gender == 'personal':
+    mode = filter_params.get('mode')
+    if mode == 'personal':
         filters['is_personal'] = True
-    elif gender == 'organisation':
+    elif mode == 'organisation':
         filters['is_personal'] = False
-    elif gender == 'female':
-        filters['tags'] = Tag.objects.get(name='Female')
-    elif gender == 'male':
-        filters['tags'] = Tag.objects.get(name='Male')
+
+    candidate = filter_params.get('candidate')
+    if candidate:
+        try:
+            position = Position.objects.get(slug=candidate)
+            filters['endorsement__position'] = position
+        except Position.DoesNotExist:
+            pass
 
     if filters:
         endorser_query = Endorser.objects.filter(**filters)
     else:
         endorser_query = Endorser.objects.all()
+
+    # Tags can't be placed in the filters dictionary because we may have to do
+    # multiple filters.
+    tags = filter_params.get('tags')
+    if type(tags) == list and tags:
+        for tag_pk in tags:
+            endorser_query = endorser_query.filter(tags=tag_pk)
 
     sort_value = sort_params.get('value')
     sort_key = None
@@ -76,7 +88,9 @@ def get_endorsers(filter_params, sort_params):
         'account_set'
     )
     endorsers = []
-    for endorser in endorser_query:
+    stats = collections.defaultdict(collections.Counter)
+    for i, endorser in enumerate(endorser_query):
+        stats['count']['endorsers'] += 1
         tags = []
         for tag in endorser.tags.all():
             tags.append({
@@ -84,23 +98,46 @@ def get_endorsers(filter_params, sort_params):
                 'description': tag.description,
                 'category': category_names[tag.pk],
             })
+            stats['tags'][tag.name] += 1
 
         endorsements = []
+        previous_position = None
         for i, endorsement in enumerate(endorser.endorsement_set.all()):
+            # Ignore a position if it's the same as the previous one.
+            position = endorsement.position
             if i == 0:
-                display = endorsement.position.get_present_display()
+                display = position.get_present_display()
+                stats['positions'][display + ' (currently)'] += 1
+                stats['count']['endorsements'] += 1
             else:
-                display = endorsement.position.get_past_display()
+                display = position.get_past_display()
+                if position != previous_position:
+                    stats['positions'][display] += 1
+                    stats['count']['endorsements'] += 1
+            previous_position = position
 
             quote = endorsement.quote
             source = quote.source
+            event = quote.event
+            if event:
+                if event.start_date == event.end_date:
+                    event_dates = event.start_date.strftime('%b %d, %Y')
+                else:
+                    event_dates = '{start} to {end}'.format(
+                        start=event.start_date.strftime('%b %d, %Y'),
+                        end=event.end_date.strftime('%b %d, %Y')
+                    )
+            else:
+                event_dates = None
+
             endorsements.append({
                 'colour': endorsement.position.colour,
                 'display': display,
                 'quote': quote.text,
                 'context': quote.context,
                 'event_context': quote.get_event_context(),
-                'event': quote.event.name if quote.event else '',
+                'event': event.name if event else '',
+                'event_dates': event_dates,
                 'date': quote.date.strftime('%b %d, %Y'),
                 'source_url': source.url,
                 'source_date': source.date.strftime('%b %d, %Y'),
@@ -108,11 +145,19 @@ def get_endorsers(filter_params, sort_params):
             })
 
         accounts = []
+        max_followers = 0
         for account in endorser.account_set.all():
+            if account.followers_count > max_followers:
+                max_followers = account.followers_count
+
             accounts.append({
                 'username': account.screen_name,
                 'num_followers': shorten(account.followers_count),
             })
+
+        if max_followers > 0:
+            stats['followers']['total'] += max_followers
+            stats['followers']['count'] += 1
 
         # Don't bother checking if it's a candidate unless there are no
         # endorsements.
@@ -133,7 +178,39 @@ def get_endorsers(filter_params, sort_params):
             'absolute_url': endorser.get_absolute_url(),
         })
 
-    return endorsers
+    return endorsers, stats
+
+
+@csrf_exempt
+def get_tags(request):
+    org_tags = []
+    for tag in Tag.objects.filter(is_personal=False):
+        org_tags.append({
+            'name': tag.name,
+            'pk': tag.pk,
+        })
+
+    category_tags = collections.defaultdict(list)
+    for tag in Tag.objects.filter(is_personal=True):
+        category_tags[tag.category.pk].append({
+            'name': tag.name,
+            'pk': tag.pk,
+        })
+
+    personal_tags = []
+    for category_pk in category_tags:
+        category = Category.objects.get(pk=category_pk)
+        personal_tags.append({
+            'name': category.name,
+            'tags': category_tags[category_pk],
+            'exclusive': category.is_exclusive,
+        })
+
+    return JsonResponse({
+        'org': org_tags,
+        'personal': personal_tags,
+    })
+
 
 @require_POST
 @csrf_exempt
@@ -163,10 +240,11 @@ def get_endorsements(request):
         filter_params = {}
         sort_params = {}
 
-    endorsers = get_endorsers(filter_params, sort_params)
+    endorsers, stats = get_endorsers(filter_params, sort_params)
 
     return JsonResponse({
         'endorsers': endorsers,
+        'stats': stats,
         'error': False
     })
 

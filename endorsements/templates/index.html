@@ -10,19 +10,133 @@
 
 {% block content %}
 {% verbatim %}
-<template id="endorser-tag-template">
-    <span :title="tag.description">
-        {{ tag.name }}
-    </span>
+<template id="endorser-search-stats-template">
+    <div v-if="stats">
+        <div class="ui block header"
+             @click="toggle_expanded"
+             :class="expanded ? 'top attached' : ''">
+            <i class="chevron down icon" v-if="!expanded"></i>
+            <i class="chevron up icon" v-if="expanded"></i>
+            Stats
+        </div>
+        <div class="ui bottom attached inverted segment"
+             v-show="expanded"
+             v-if="stats.positions">
+            <h3>
+                {{ stats.count.endorsers }} endorsers with
+                {{ stats.count.endorsements }} distinct endorsements
+            </h3>
+            <div class="ui basic center aligned segment">
+                <div class="ui buttons">
+                    <button class="ui button"
+                            :class="{active: tab == 'positions'}"
+                            @click="tab = 'positions'">
+                        Positions
+                    </button>
+                    <button class="ui button"
+                            :class="{active: tab == 'tags'}"
+                            @click="tab = 'tags'">
+                        Tags
+                    </button>
+                    <button class="ui button"
+                            :class="{active: tab == 'json'}"
+                            @click="tab = 'json'">
+                        JSON
+                    </button>
+                </div>
+            </div>
+            <table class="ui striped table" v-if="tab == 'tags'">
+                <thead>
+                    <tr>
+                        <th>
+                            Position
+                        </th>
+                        <th>
+                            Count
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="(tag_count, tag_name, tag_index) in stats.tags">
+                        <td>
+                            {{ tag_name }}
+                        </td>
+                        <td>
+                            {{ tag_count }}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <table class="ui striped table" v-if="tab == 'positions'">
+                <thead>
+                    <tr>
+                        <th>
+                            Position
+                        </th>
+                        <th>
+                            Count
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="(pos_val, pos_name, pos_index) in stats.positions">
+                        <td>
+                            <i class="green inverted circular comment icon"
+                               v-if="pos_name.indexOf('Endorse') >= 0"></i>
+                            <i class="red inverted circular comment icon"
+                               v-if="pos_name.indexOf('Oppose') >= 0"></i>
+                            <i class="blue inverted circular comment icon"
+                               v-if="pos_name.indexOf('Support') >= 0"></i>
+                            {{ pos_name }}
+                        </td>
+                        <td>
+                            {{ pos_val }}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <pre v-if="tab == 'json'"><code>{{ stats | json }}</code></pre>
+        </div>
+    </div>
+</template>
+
+<template id="endorser-filter-form-tags-template">
+    <div class="ui labels">
+        <button class="ui label"
+                :class="tag_is_selected(tag) ? 'black' : 'basic'"
+                @click="toggle_tag(tag)"
+                v-for="tag in tags">
+            {{ tag.name }}
+        </button>
+    </div>
+</template>
+
+<template id="endorser-filter-form-exclusive-tags-template">
+    <div class="ui form">
+        <div class="inline fields">
+            <div class="field"
+                 @click="toggle_tag(tag)"
+                 v-for="tag in tags">
+                <div class="ui radio checkbox">
+                    <input type="radio"
+                           :checked="tag_is_selected(tag)"/>
+                    <label>{{ tag.name }}</label>
+                </div>
+            </div>
+        </div>
+    </div>
 </template>
 
 <template id="endorser-sort-filter-form-template">
     <div>
-        <div class="ui top attached block header">
-            <i class="loading notched circle icon" v-show="loaders != 0"></i>
-            Sort
+
+        <div class="ui top attached inverted segment">
+            <div class="ui inverted header">
+                <i class="loading notched circle icon" v-show="loaders != 0"></i>
+                Sort
+            </div>
         </div>
-        <div class="ui bottom attached segment" v-show="loaders == 0">
+        <div class="ui attached segment">
             <div class="ui form">
                 <div class="three fields">
                     <div class="field"
@@ -41,45 +155,65 @@
             </div>
         </div>
 
-        <div class="ui attached block header"
-             :class="{top: loaders == 0, bottom: loaders != 0}">
-            <i class="loading notched circle icon" v-show="loaders != 0"></i>
-            Filter
-        </div>
-        <div class="ui bottom attached segment" v-show="loaders == 0">
-            <div class="ui equal width form">
-                <div class="fields">
-                    <div class="field">
-                        <label>Gender</label>
-                        <div class="ui basic buttons">
-                            <button class="ui button"
-                                    v-for="gender in options.filtering.gender"
-                                    :class="{active: form.filter.gender == gender.value}"
-                                    @click="form.filter.gender = gender.value">
-                                {{ gender.name }}
-                            </button>
-                        </div>
+        <div class="ui attached inverted segment">
+            <div class="ui middle aligned two column grid">
+                <div class="column">
+                    <div class="ui inverted header">
+                        <i class="loading notched circle icon" v-show="loaders != 0"></i>
+                        Filter
                     </div>
-                    <div class="field">
-                        <label>Tags</label>
-                        <div class="ui mini labels">
-                            <button class="ui label"
-                                    v-for="(tag, tag_id, tag_index) in options.filtering.tags"
-                                    :class="{black: selected_tag(tag_id), basic: !selected_tag(tag_id)}"
-                                    @click="toggle_tag(tag_id)">
-                                <endorser-tag :tag="tag"></endorser-tag>
-                            </button>
-                        </div>
+                </div>
+                <div class="right aligned column">
+                    <div class="ui buttons">
+                        <button v-for="tab in tabs.all"
+                                @click="select_tab(tab.value)"
+                                class="ui button"
+                                :class="tabs.current == tab.value ? 'active' : ''">
+                            {{ tab.name }}
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
-
-        <div class="ui top attached block header">
-            Query
+        <div class="ui attached segment"
+             v-if="tabs.current == 'organisation'">
+            <div class="ui form">
+                <div class="field">
+                    <label>Tags</label>
+                    <endorser-filter-form-exclusive-tags :tags="options.filter.tags.org"
+                                               :selected_tags="form.filter.tags">
+                    </endorser-filter-form-exclusive-tags>
+                </div>
+            </div>
         </div>
-        <div class="ui bottom attached inverted segment">
-            <pre><code>{{ form | json }}</code></pre>
+        <div class="ui attached segment"
+             v-if="tabs.current == 'personal'">
+            <div class="ui form">
+                <div class="field"
+                     v-for="tag_group in options.filter.tags.personal">
+                    <label>{{ tag_group.name }}</label>
+                    <div v-if="tag_group.exclusive">
+                        <endorser-filter-form-exclusive-tags :tags="tag_group.tags"
+                                                             :selected_tags="form.filter.tags">
+                        </endorser-filter-form-exclusive-tags>
+                    </div>
+                    <div v-if="!tag_group.exclusive">
+                        <endorser-filter-form-tags :tags="tag_group.tags"
+                                                   :selected_tags="form.filter.tags">
+                        </endorser-filter-form-tags>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="ui center aligned bottom attached inverted segment">
+            <button class="ui button"
+                    :disabled="loaders != 0"
+                    :class="{disabled: loaders != 0}"
+                    @click="search">
+                <i class="loading notched circle icon"
+                   v-show="loaders != 0"></i>
+                Search
+            </button>
         </div>
     </div>
 </template>
@@ -127,13 +261,17 @@
              :class="{active: expanded}">
             <blockquote :cite="endorsement.source_url">
                 <p v-if="endorsement.event">
-                    <em>[{{ endorsement.event_context }}
-                        <a href="">{{ endorsement.event }}</a>]</em>
+                    <em>
+                        [{{ endorsement.event_context }}
+                        <a :title="endorsement.event_dates">{{ endorsement.event }}</a>]
+                    </em>
+                    <br />
                     <br />
                 </p>
 
                 <p v-if="endorsement.context">
                     <em>[{{ endorsement.context }}]</em>
+                    <br />
                     <br />
                 </p>
 
@@ -157,7 +295,7 @@
 
 <template id="endorsements-accordion-template">
     <div>
-        <div v-if="endorsements.length"
+        <div v-if="endorsements && endorsements.length"
              class="ui fluid accordion">
             <endorsement-accordion-item v-for="(endorsement, index) in endorsements"
                                         :present="index == 0"
@@ -177,7 +315,7 @@
 </template>
 
 <template id="comments-accordion-template">
-    <div v-if="comments.length">
+    <div v-if="comments && comments.length">
         <div class="ui divider"></div>
         <div class="ui fluid accordion">
              <h3>Comments</h3>
@@ -249,17 +387,20 @@
 
 <div id="app">
     <div>
-        <endorser-sort-filter-form :loaders="loaders">
+        <endorser-sort-filter-form :loaders="loaders"
+                                   @form_changed="get_endorsers">
         </endorser-sort-filter-form>
 
-        <div class="ui hidden divider"></div>
+        <div class="ui divider"></div>
 
-        There are {{ endorsers.length }} endorsers.
+        <endorser-search-stats :stats="stats">
+        </endorser-search-stats>
 
-        <div class="ui hidden divider"></div>
+        <div class="ui divider"></div>
 
         <div class="ui three cards">
-            <endorser-card v-for="endorser in endorsers"
+            <endorser-card v-for="(endorser, endorser_index) in endorsers"
+                           v-if="endorser_index < endorsers_shown"
                            :endorser="endorser">
             </endorser-card>
         </div>
@@ -278,38 +419,82 @@
 
 {% block scripts %}
 <script>
-MessageQueue = function() {
-    this.mq = [];
-};
+Vue.component('endorser-search-stats', {
+    template: '#endorser-search-stats-template',
 
-MessageQueue.prototype.$listen = function(eventName, callback) {
-    console.info('mq listening on', eventName);
+    data: function() {
+        return {
+            expanded: false,
+            tab: 'tags',
+        };
+    },
 
-    this.mq[eventName] = this.mq[eventName] || [];
-    this.mq[eventName].push(callback);
-};
+    methods: {
+        toggle_expanded: function() {
+            this.expanded = !this.expanded;
+        },
+    },
 
-MessageQueue.prototype.$notify = function(eventName, context) {
-    console.info('mq notifying on', eventName);
+    props: ['stats'],
+});
 
-    if(this.mq[eventName]) {
-        this.mq[eventName].forEach(function(cb) {
-            cb(context);
-        });
-    }
-};
+Vue.component('endorser-filter-form-tags', {
+    template: '#endorser-filter-form-tags-template',
 
-var mq = new MessageQueue();
+    methods: {
+        tag_is_selected: function(tag) {
+            return this.selected_tags.indexOf(tag.pk) >= 0;
+        },
+        toggle_tag: function(tag) {
+            var tag_index = this.selected_tags.indexOf(tag.pk);
 
-Vue.component('endorser-tag', {
-    template: '#endorser-tag-template',
-    props: ['tag'],
+            if(tag_index >= 0) {
+                this.selected_tags.splice(tag_index, 1);
+            } else {
+                this.selected_tags.push(tag.pk);
+            }
+        },
+    },
+
+    props: ['selected_tags', 'tags'],
+});
+
+Vue.component('endorser-filter-form-exclusive-tags', {
+    template: '#endorser-filter-form-exclusive-tags-template',
+
+    methods: {
+        tag_is_selected: function(tag) {
+            return this.selected_tags.indexOf(tag.pk) >= 0;
+        },
+        toggle_tag: function(tag) {
+            if(this.tag_is_selected(tag)) {
+                this.raw_unselect_tag(tag);
+            } else {
+                this.tags.forEach(this.raw_unselect_tag);
+                this.selected_tags.push(tag.pk);
+            }
+        },
+
+        raw_unselect_tag: function(tag) {
+            var tag_index = this.selected_tags.indexOf(tag.pk);
+            if(tag_index >= 0) {
+                this.selected_tags.splice(tag_index, 1);
+            }
+        }
+    },
+
+    props: ['selected_tags', 'tags'],
 });
 
 Vue.component('endorser-sort-filter-form', {
     template: '#endorser-sort-filter-form-template',
 
     data: function() {
+        // See if there's a candidate specified in the URL. TODO: Improve.
+        var candidate = null;
+        if (window.location.hash.startsWith('#candidate=')) {
+            candidate = window.location.hash.substring(11);
+        }
         return {
             form: {
                 sort: {
@@ -317,9 +502,18 @@ Vue.component('endorser-sort-filter-form', {
                     value: 'most',
                 },
                 filter: {
-                    gender: 'any',
-                    tags: {},
+                    tags: [],
+                    mode: 'none',
+                    candidate: candidate,
                 },
+            },
+            tabs: {
+                current: 'none',
+                all: [
+                    { name: 'No filtering', value: 'none' },
+                    { name: 'People only', value: 'personal' },
+                    { name: 'Organisations only', value: 'organisation' },
+                ],
             },
             options: {
                 sorting: [
@@ -348,14 +542,7 @@ Vue.component('endorser-sort-filter-form', {
                         ],
                     },
                 ],
-                filtering: {
-                    gender: [
-                        { name: 'Any', value: 'any' },
-                        { name: 'Personal', value: 'personal' },
-                        { name: 'Male', value: 'male' },
-                        { name: 'Female', value: 'female' },
-                        { name: 'Organisation', value: 'organisation' },
-                    ],
+                filter: {
                     tags: {},
                 }
             },
@@ -371,46 +558,31 @@ Vue.component('endorser-sort-filter-form', {
             return this.form.sort.by == method &&
                    this.form.sort.value == value;
         },
-        notify: function() {
-            console.info('endorser-sort-filter-form:update');
-            mq.$notify('endorser-sort-filter-form:update', this.form);
-        },
 
         get_tags: function() {
-            this.options.filtering.tags = {
-                '1': { name: 'president'},
-                '2': { name: 'black'},
-                '3': { name: 'male'},
-                '4': { name: 'female'},
-            };
-            console.info('get tags');
+            var component = this;
+            var tagsUrl = '/api/tags.json';
+
+            $.getJSON(tagsUrl)
+            .done(function(tag_options) {
+                component.options.filter.tags = tag_options;
+            });
         },
 
-        toggle_tag: function(tag_id) {
-            if(this.form.filter.tags[tag_id]) {
-                Vue.delete(this.form.filter.tags, tag_id);
-            } else {
-                Vue.set(this.form.filter.tags, tag_id, true);
-            }
+        select_tab: function(tab) {
+            this.form.filter.tags = [];
+            this.form.filter.mode = tab;
+            this.tabs.current = tab;
         },
-        selected_tag: function(tag_id) {
-            return this.form.filter.tags[tag_id] !== undefined;
+
+        search: function() {
+            this.$emit('form_changed', this.form);
         },
     },
 
     mounted: function() {
-        console.info('mounted <endorser-sort-filter-form>.');
         this.get_tags();
-        this.notify();
-    },
-
-    watch: {
-        form: {
-            deep: true,
-            handler: function(n, o) {
-                this.notify();
-            },
-        },
+        this.search();
     },
 
     props: ['loaders'],
@@ -480,23 +652,41 @@ new Vue({
     el: '#app',
 
     created: function() {
-        console.info('created #app.');
-        var context = this;
+        var component = this;
 
-        mq.$listen('endorser-sort-filter-form:update', function(form) {
-            context.getEndorsers(form);
+        $(window).scroll(function() {
+            var current_position = $(window).scrollTop() + $(window).height();
+            var doc_height_with_buffer = $(document).height() - 100;
+
+            if(current_position >= doc_height_with_buffer) {
+                component.$emit('maybe-load-more-endorsers');
+            }
+        });
+
+        component.$on('maybe-load-more-endorsers', function() {
+            if(component.endorsers_shown < component.endorsers.length) {
+                component.endorsers_shown += component.page_size;
+            }
         });
     },
 
     data: {
         loaders: 0,
         endorsers: [],
+        page_size: 9,
+        endorsers_shown: 9,
+        stats: null,
     },
 
     methods: {
-        getEndorsers: function(form) {
-            var context = this;
-            context.loaders += 1;
+        get_endorsers: function(form) {
+            var component = this;
+
+            component.endorsers = [];
+            component.endorsers_shown = component.page_size;
+            component.stats = null;
+
+            component.loaders += 1;
 
             var endorsersUrl = "/api/endorsements.json";
 
@@ -507,14 +697,21 @@ new Vue({
                 contentType: 'application/json'
             })
             .done(function(response) {
-                context.endorsers = response.endorsers;
-                context.loaders -= 1;
+                if(response.endorsers.length === 0) {
+                    component.end = true;
+                }
+
+                var endorsers = response.endorsers;
+                component.endorsers = endorsers;
+
+                component.stats = response.stats;
+
+                component.loaders -= 1;
             });
         },
     },
 
     mounted: function() {
-        console.info('mounted #app.');
     },
 });
 </script>

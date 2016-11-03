@@ -316,6 +316,7 @@ class Position(models.Model):
     past_tense_prefix = models.CharField(max_length=10, blank=True)
     present_tense_prefix = models.CharField(max_length=10, blank=True)
     suffix = models.CharField(max_length=30)
+    slug = models.SlugField()
 
     def __unicode__(self):
         return self.get_name_display()
