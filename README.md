@@ -17,7 +17,7 @@ you to filter and sort arbitrarily:
 
 ## Features
 
-* Can browse endorsements from close to 500 entities (celebrities, politicians,
+* Can browse endorsements from over 500 entities (celebrities, politicians,
   newspapers, etc), including:
   * Who the endorser is, with some tags
   * Number of followers on Twitter (if any)
@@ -27,13 +27,18 @@ you to filter and sort arbitrarily:
   * The historical context around the endorsement (e.g., right after someone
     dropped out of the race, or during a particular debate)
   * A short quote indicating the flavour of the endorsement
-* Can filter by some basic tags (gender, personal/org)
+* Can filter by:
+  * Tags:
+    * Orgs: publication / political org / corporation / etc
+    * People: gender, party affilitation, URM, occuptation, govt positions
+  * Position (which candidate they support, usually) - currently only done with
+    hash parameters (e.g., #candidate=trump)
 
 ### To do
 
-* Get it up and running before November 8
+* About page
+* Legend on homepage
 * Better filtering -- more things to filter by
-  * Real tags (the ones visible right now are hardcoded and not used)
   * Date of endorsement
   * Event (before/during/after)
   * Type of endorsement (opposed/supported a particular candidate)
@@ -42,11 +47,12 @@ you to filter and sort arbitrarily:
     Access Hollywood leak" or "show me all the Democrats who endorsed Sanders
     and haven't endorsed Hillary yet"
 * Keep adding endorsements (at least 1k)
-* Integrate charts (by tags) for queries
+* Integrate charts and other stats (by tags/position) for queries
   * e.g., you should be able to find the gender breakdown of Republicans who
     endorsed Clinton
-* Use Redis for caching the default, unfiltered query?
-* CloudFront?
+  * compare stats to baseline
+* More fine-grained memcached control?
+* Split the CSS into a separate file
 
 ### Stretch goals
 
