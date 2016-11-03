@@ -108,6 +108,7 @@ class AccountManager(models.Manager):
                 account = self.get(twitter_id=twitter_id)
                 account.url = url
                 account.profile_image_url = user['profile_image_url']
+                account.followers_count = user['followers_count']
 
                 # If the endorser is set, update it.
                 if endorser is not None:
