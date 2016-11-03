@@ -218,6 +218,7 @@ class Candidate(models.Model):
     name = models.CharField(max_length=50)
     description = models.TextField()
     color = models.CharField(max_length=6)
+    still_running = models.BooleanField(default=False)
 
     def __unicode__(self):
         return self.name
