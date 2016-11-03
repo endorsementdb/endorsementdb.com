@@ -2,13 +2,36 @@
 
 {% load humanize %}
 
-{% block title %}Endorsements{% endblock %}
+{% block title %}
+    Election 2016 Endorsements
+{% endblock %}
 
 {% block buttons %}
 {% include "add_endorser_snippet.html" %}
 {% endblock %}
 
 {% block content %}
+<div class="ui message">
+    <img alt="Logo" class="ui middle aligned tiny left floated image"
+         src="https://s3.amazonaws.com/endorsementdb.com/images/endorsementdb.png" />
+    <p>
+        This project is an attempt to track candidate endorsements in the 2016
+        US presidential election in a structured, non-partisan manner. We
+        currently have {{ count }} endorsers (including both individual people
+        and organisations) in our database.
+    </p>
+    <p>
+        It's still under active development, so if you notice a bug, or
+        error, or just something that could be improved, please send me an
+        email at <a
+        href="mailto:admin@endorsement.com">admin@endorsementdb.com</a>
+        or find me on Twitter at <a
+        href="https://twitter.com/endorsementdb">@endorsementdb</a>.
+        If you're interested in helping out in any way, take a look at <a
+        href="https://github.com/endorsementdb/endorsementdb.com">the
+        GitHub repo</a>.
+    </p>
+</div>
 {% verbatim %}
 <template id="endorser-search-stats-template">
     <div v-if="stats">

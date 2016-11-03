@@ -1,3 +1,6 @@
+<a href="https://github.com/endorsementdb/endorsementdb.com#readme">
+    About
+</a>
 {% if request.user.is_staff %}
 <form class="ui action input" method="post" action="{% url 'add-endorser' %}">
     <input type="text" placeholder="Username" name="username" />

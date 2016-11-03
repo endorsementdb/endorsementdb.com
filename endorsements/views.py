@@ -250,7 +250,9 @@ def get_endorsements(request):
 
 
 def index(request):
-    context = {}
+    context = {
+        'count': Endorser.objects.count(),
+    }
     return render(request, 'index.html', context)
 
 
