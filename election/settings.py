@@ -15,6 +15,8 @@ import os
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+MEMCACHED_HOST = os.environ.get('MEMCACHED_HOST')
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.9/howto/deployment/checklist/
@@ -42,7 +44,12 @@ INSTALLED_APPS = [
     'debug_toolbar',
 ]
 
-MIDDLEWARE_CLASSES = [
+# Only add cache-related middleware if the MEMCACHED_HOST env var is set.
+MIDDLEWARE_CLASSES = []
+if MEMCACHED_HOST:
+    MIDDLEWARE_CLASSES.append('django.middleware.cache.UpdateCacheMiddleware')
+
+MIDDLEWARE_CLASSES.extend([
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -52,7 +59,10 @@ MIDDLEWARE_CLASSES = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
-]
+])
+
+if MEMCACHED_HOST:
+    MIDDLEWARE_CLASSES.append('django.middleware.cache.FetchFromCacheMiddleware')
 
 ROOT_URLCONF = 'election.urls'
 
@@ -130,3 +140,12 @@ STATIC_URL = '/static/'
 
 JQUERY_URL = ''
 INTERNAL_IPS = ['127.0.0.1']
+
+
+if MEMCACHED_HOST:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+            'LOCATION': MEMCACHED_HOST + ':11211',
+        }
+    }
