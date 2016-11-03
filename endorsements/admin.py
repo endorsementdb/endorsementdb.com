@@ -16,7 +16,7 @@ class AccountAdmin(admin.ModelAdmin):
 
 @admin.register(Candidate)
 class CandidateAdmin(admin.ModelAdmin):
-    pass
+    list_display = ('name', 'color', 'still_running')
 
 
 class EndorsementInline(admin.TabularInline):
@@ -185,7 +185,7 @@ class QuoteAdmin(admin.ModelAdmin):
 
 @admin.register(Position)
 class PositionAdmin(admin.ModelAdmin):
-    list_display = ('get_name_display', 'colour')
+    list_display = ('get_name_display', 'colour', 'slug')
 
 
 @admin.register(Tag)
@@ -206,6 +206,7 @@ class EventAdmin(admin.ModelAdmin):
 @admin.register(Endorsement)
 class EndorsementAdmin(admin.ModelAdmin):
     list_display = ('endorser', 'position', 'get_truncated_quote', 'get_date')
+    list_filter = ('position',)
 
 
 @admin.register(Comment)
