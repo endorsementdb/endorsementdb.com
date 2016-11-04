@@ -3,8 +3,11 @@ import json
 import random
 
 from django.contrib import messages
+from django.core.cache import cache
+from django.db.models import Count
 from django.http import Http404, JsonResponse
 from django.shortcuts import redirect, render, get_object_or_404
+from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
@@ -93,11 +96,7 @@ def get_endorsers(filter_params, sort_params):
         stats['count']['endorsers'] += 1
         tags = []
         for tag in endorser.tags.all():
-            tags.append({
-                'name': tag.name,
-                'description': tag.description,
-                'category': category_names[tag.pk],
-            })
+            tags.append((tag.name, tag.pk))
             stats['tags'][tag.name] += 1
 
         endorsements = []
@@ -131,17 +130,17 @@ def get_endorsers(filter_params, sort_params):
                 event_dates = None
 
             endorsements.append({
-                'colour': endorsement.position.colour,
-                'display': display,
-                'quote': quote.text,
-                'context': quote.context,
-                'event_context': quote.get_event_context(),
-                'event': event.name if event else '',
-                'event_dates': event_dates,
-                'date': quote.date.strftime('%b %d, %Y'),
-                'source_url': source.url,
-                'source_date': source.date.strftime('%b %d, %Y'),
-                'source_name': source.name,
+                'c': endorsement.position.colour,
+                'di': display,
+                'q': quote.text,
+                'cx': quote.context,
+                'ecx': quote.get_event_context(),
+                'e': event.name if event else '',
+                'ed': event_dates,
+                'da': quote.date.strftime('%b %d, %Y'),
+                'su': source.url,
+                'sd': source.date.strftime('%b %d, %Y'),
+                'sn': source.name,
             })
 
         accounts = []
@@ -151,8 +150,8 @@ def get_endorsers(filter_params, sort_params):
                 max_followers = account.followers_count
 
             accounts.append({
-                'username': account.screen_name,
-                'num_followers': shorten(account.followers_count),
+                'u': account.screen_name,
+                'n': shorten(account.followers_count),
             })
 
         if max_followers > 0:
@@ -166,23 +165,24 @@ def get_endorsers(filter_params, sort_params):
             is_candidate = True
 
         endorsers.append({
-            'image': endorser.get_image_url(),
-            'pk': endorser.pk,
-            'name': endorser.name,
-            'url': endorser.url,
-            'description': endorser.description,
-            'tags': tags,
-            'endorsements': endorsements,
-            'accounts': accounts,
-            'is_candidate': is_candidate,
-            'absolute_url': endorser.get_absolute_url(),
+            'p': endorser.pk,
+            'n': endorser.name,
+            'u': endorser.url,
+            'd': endorser.description,
+            't': tags,
+            'e': endorsements,
+            'a': accounts,
+            'i': is_candidate,
         })
 
     if not stats['followers']:
         stats['followers']['total'] = 0
         stats['followers']['count'] = 0
 
-    return endorsers, stats
+    return {
+        'endorsers': endorsers,
+        'stats': stats,
+    }
 
 
 @csrf_exempt
@@ -244,20 +244,33 @@ def get_endorsements(request):
         filter_params = {}
         sort_params = {}
 
-    endorsers, stats = get_endorsers(filter_params, sort_params)
+    params_string = (
+        'query_{sort_by}_{sort_value}_{mode}_{candidate}_{tags}'
+    ).format(
+        sort_by=sort_params.get('by', 'followers'),
+        sort_value=sort_params.get('value', 'most'),
+        mode=filter_params.get('mode', 'none'),
+        candidate=filter_params.get('candidate', 'all'),
+        tags=','.join(sorted(map(str, filter_params.get('tags', [])))),
+    )
 
-    return JsonResponse({
-        'endorsers': endorsers,
-        'stats': stats,
-        'error': False
-    })
+    results = cache.get(params_string)
+    if results is None:
+        results = get_endorsers(filter_params, sort_params)
+        cache.set(params_string, results, 60 * 60)
+
+    return JsonResponse(results)
 
 
+@cache_page(60 * 15)
 def index(request):
+    positions = Position.objects.all().annotate(
+        num_endorsers=Count('endorsement__endorser')
+    )
     counts = {}
-    for position in Position.objects.all():
+    for position in positions:
         if position.slug:
-            counts[position.slug] = Endorser.objects.filter(endorsement__position=position).distinct().count()
+            counts[position.slug] = position.num_endorsers
     counts['total'] = Endorser.objects.count()
 
     context = {

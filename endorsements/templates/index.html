@@ -35,20 +35,18 @@
 {% verbatim %}
 <template id="endorser-search-stats-template">
     <div v-if="stats">
-        <div class="ui block header"
+        <h3 class="ui block header"
              @click="toggle_expanded"
              :class="expanded ? 'top attached' : ''">
             <i class="chevron down icon" v-if="!expanded"></i>
             <i class="chevron up icon" v-if="expanded"></i>
             Stats
-        </div>
+            ({{ stats.count.endorsers }} endorsers with
+            {{ stats.count.endorsements }} distinct endorsements)
+        </h3>
         <div class="ui bottom attached inverted segment"
              v-show="expanded"
              v-if="stats.positions">
-            <h3>
-                {{ stats.count.endorsers }} endorsers with
-                {{ stats.count.endorsements }} distinct endorsements
-            </h3>
             <div class="ui basic center aligned segment">
                 <div class="ui buttons">
                     <button class="ui button"
@@ -214,13 +212,13 @@
                         <button v-for="tab in tabs.all"
                                 @click="select_tab(tab.value)"
                                 class="ui button"
-                                :class="tabs.current == tab.value ? 'grey' : ''">
+                                :class="form.filter.mode == tab.value ? 'grey' : ''">
                             {{ tab.name }}
                         </button>
                     </div>
                 </div>
             </div>
-            <div v-if="tabs.current == 'organization'">
+            <div v-if="form.filter.mode == 'organization'">
                 <br />
                 <div class="ui form">
                     <div class="field">
@@ -231,7 +229,7 @@
                     </div>
                 </div>
             </div>
-            <div v-if="tabs.current == 'personal'">
+            <div v-if="form.filter.mode == 'personal'">
                 <br />
                 <div class="ui form">
                     <div class="field"
@@ -256,7 +254,7 @@
                 <button class="ui large icon black button"
                         :disabled="loaders != 0"
                         :class="{'basic': form.filter.candidate != 'all'}"
-                        @click="search('all')">
+                        @click="update_candidate('all')">
                     <i class="filter icon"></i>
                     All
                 </button>
@@ -270,7 +268,7 @@
                 <button class="ui large blue icon button"
                         :disabled="loaders != 0"
                         :class="{'basic': form.filter.candidate != 'clinton'}"
-                        @click="search('clinton')">
+                        @click="update_candidate('clinton')">
                     <i class="filter icon"></i>
                     Clinton
                 </button>
@@ -284,7 +282,7 @@
                 <button class="ui large red icon button"
                         :disabled="loaders != 0"
                         :class="{'basic': form.filter.candidate != 'trump'}"
-                        @click="search('trump')">
+                        @click="update_candidate('trump')">
                     <i class="filter icon"></i>
                     Trump
                 </button>
@@ -298,7 +296,7 @@
                 <button class="ui large green icon button"
                         :disabled="loaders != 0"
                         :class="{'basic': form.filter.candidate != 'stein'}"
-                        @click="search('stein')">
+                        @click="update_candidate('stein')">
                     <i class="filter icon"></i>
                     Stein
                 </button>
@@ -312,7 +310,7 @@
                 <button class="ui large orange icon button"
                         :disabled="loaders != 0"
                         :class="{'basic': form.filter.candidate != 'pence'}"
-                        @click="search('pence')">
+                        @click="update_candidate('pence')">
                     <i class="filter icon"></i>
                     Pence
                 </button>
@@ -326,7 +324,7 @@
                 <button class="ui large yellow icon button"
                         :disabled="loaders != 0"
                         :class="{'basic': form.filter.candidate != 'johnson'}"
-                        @click="search('johnson')">
+                        @click="update_candidate('johnson')">
                     <i class="filter icon"></i>
                     Johnson
                 </button>
@@ -347,11 +345,11 @@
             <div class="content">
                 <i class="twitter icon"></i>
                 <a :href="url(account)">
-                    <strong>@{{ account.username }}</strong>
+                    <strong>@{{ account.u }}</strong>
                 </a>
 
                 <span>
-                    {{ account.num_followers }} followers
+                    {{ account.n }} followers
                 </span>
              </div>
          </div>
@@ -360,8 +358,8 @@
 
 <template id="endorsement-label-template">
     <div class="ui label"
-         :class="endorsement.colour">
-         {{ endorsement.display }}
+         :class="endorsement.c">
+         {{ endorsement.di }}
     </div>
 </template>
 
@@ -376,37 +374,37 @@
             </endorsement-label>
             as of
             <div class="ui basic label">
-                {{ endorsement.date }}
+                {{ endorsement.da }}
             </div>
         </div>
         <div class="content"
              :class="{active: expanded}">
-            <blockquote :cite="endorsement.source_url">
-                <p v-if="endorsement.event">
+            <blockquote :cite="endorsement.su">
+                <p v-if="endorsement.e">
                     <em>
-                        [{{ endorsement.event_context }}
-                        <a :title="endorsement.event_dates">{{ endorsement.event }}</a>]
+                        [{{ endorsement.ecx }}
+                        <a :title="endorsement.ed">{{ endorsement.e }}</a>]
                     </em>
                     <br />
                     <br />
                 </p>
 
-                <p v-if="endorsement.context">
-                    <em>[{{ endorsement.context }}]</em>
+                <p v-if="endorsement.cx">
+                    <em>[{{ endorsement.cx }}]</em>
                     <br />
                     <br />
                 </p>
 
-                <p>{{ endorsement.quote }}</p>
+                <p>{{ endorsement.q }}</p>
                 <footer>
                     <cite>
                         &mdash;
-                        <a :href="endorsement.source_url">
-                            {{ endorsement.source_name }}
+                        <a :href="endorsement.su">
+                            {{ endorsement.sn }}
                             <i class="external link icon"></i>
                         </a>
-                        <span v-if="endorsement.date != endorsement.source_date">
-                            (published {{ endorsement.source_date }})
+                        <span v-if="endorsement.da != endorsement.sd">
+                            (published {{ endorsement.sd }})
                         </span>
                     </cite>
                 </footer>
@@ -426,11 +424,11 @@
             </endorsement-accordion-item>
         </div>
         <div v-else>
-            <div v-if="endorser.is_candidate">
-                <h3>{{ endorser.name }} is a candidate.</h3>
+            <div v-if="endorser.i">
+                <h3>{{ endorser.n }} is a candidate.</h3>
             </div>
             <div v-else>
-                <h3>{{ endorser.name }} has not endorsed anyone yet.</h3>
+                <h3>{{ endorser.n }} has not endorsed anyone yet.</h3>
             </div>
         </div>
     </div>
@@ -450,10 +448,8 @@
 
 <template id="endorser-tags-template">
     <div class="ui labels">
-        <div class="ui label"
-             v-for="tag in tags"
-             :title="tag.description">
-            {{ tag.name }}
+        <div class="ui label" v-for="tag in tags">
+            {{ tag[0] }}
         </div>
     </div>
 </template>
@@ -461,47 +457,47 @@
 <template id="endorser-card-template">
     <div class="ui card">
         <div class="image">
-            <img :src="endorser.image" />
+            <img :src="'https://s3.amazonaws.com/endorsementdb.com/images/endorsers/' + endorser.p + '.png'" />
         </div>
 
         <div class="content">
             <div class="header">
-                <a :href="endorser.absolute_url">
-                    {{ endorser.name }}
+                <a :href="'/endorser/' + endorser.p">
+                    {{ endorser.n }}
                 </a>
             </div>
-            <a :href="endorser.url"
-               v-if="endorser.url"
+            <a :href="endorser.u"
+               v-if="endorser.u"
                class="meta">
-                {{ endorser.url }}
+                {{ endorser.u }}
             </a>
 
-            <p v-if="endorser.description"
+            <p v-if="endorser.d"
                class="description">
-                {{ endorser.description }}
+                {{ endorser.d }}
             </p>
 
             <div class="ui divider"></div>
 
             <div class="ui labels"
-                 v-if="endorser.tags.length">
-                <endorser-tags :tags="endorser.tags">
+                 v-if="endorser.t.length">
+                <endorser-tags :tags="endorser.t">
                 <endorser-tags>
             </div>
 
             <div class="ui divider"></div>
 
             <endorsements-accordion :endorser="endorser"
-                                    :endorsements="endorser.endorsements">
+                                    :endorsements="endorser.e">
             </endorsements-accordion>
 
             <comments-accordion :endorser="endorser"
-                                :comments="endorser.comments">
+                                :comments="endorser.c">
             </comments-accordion>
 
             <div class="ui divider"></div>
 
-            <endorser-accounts :accounts="endorser.accounts">
+            <endorser-accounts :accounts="endorser.a">
             </endorser-accounts>
         </div>
     </div>
@@ -548,37 +544,64 @@
 
 {% block scripts %}
 <script>
-function get_form_from_hash() {
-    if(!window.location.hash) return {};
-    var hash_pairs = window.location.hash.substring(1).split('&');
-
+function get_hash_dict() {
+    var hash = (window.location.hash || '').substring(1);
     var hash_dict = {};
-    hash_pairs.forEach(function(pair) {
-        var split = pair.split('=');
 
-        var field_name = split[0];
+    try {
+        hash.split('&').forEach(function(pair) {
+            var split = pair.split('=');
+            var field_name, field_value;
 
-        if(split.length == 1) {
-            hash_dict[field_name] = true;
-        } else {
-            var field_value = split[1];
+            field_name = split[0];
+
+            if(field_name.length === 0) return;
+
+            if(split.length == 1) {
+                field_value = true;
+            } else {
+                field_value = deserialize(split[1]);
+            }
+
             hash_dict[field_name] = field_value;
-        }
-    });
-    if(typeof hash_dict.form === 'undefined') {
+        });
+
+        return hash_dict;
+    }
+    catch(e) {
+        console.error('hash cannot be parsed', hash, e);
         return {};
     }
-
-    var serialized = hash_dict.form;
-    return JSON.parse(decodeURIComponent(escape(atob(serialized))));
 }
 
-get_form_from_hash();
+function get_from_hash(field_name) {
+    var hash_dict = get_hash_dict();
+    if(typeof hash_dict[field_name] != 'undefined') {
+        return hash_dict[field_name];
+    }
+}
 
-function update_hash_with_form(form) {
-    var serialized = 'form=';
-    serialized += JSON.stringify(form);
-    serialized = btoa(unescape(encodeURIComponent(JSON.stringify(form))));
+function update_hash(field_name, field_value) {
+    var hash_dict = get_hash_dict();
+    hash_dict[field_name] = field_value;
+
+    var hash = [];
+    for(var field_name in hash_dict) {
+        var field_value = serialize(hash_dict[field_name]);
+        hash.push(field_name + '=' + field_value);
+    }
+
+    var hash_string = '#' + hash.join('&');
+
+    window.location.hash = hash_string;
+}
+
+function serialize(obj) {
+    return btoa(JSON.stringify(obj)).replace(/=/g, '');
+}
+
+function deserialize(obj) {
+    return JSON.parse(atob(obj));
 }
 
 Vue.component('endorser-search-stats', {
@@ -669,7 +692,6 @@ Vue.component('endorser-sort-filter-form', {
                 },
             },
             tabs: {
-                current: 'none',
                 all: [
                     { name: 'All endorsements', value: 'none' },
                     { name: 'People only', value: 'personal' },
@@ -733,24 +755,48 @@ Vue.component('endorser-sort-filter-form', {
         select_tab: function(tab) {
             this.form.filter.tags = [];
             this.form.filter.mode = tab;
-            this.tabs.current = tab;
         },
 
-        search: function(candidate) {
+        update_hash_with_form: function() {
+            update_hash('form', this.form);
+        },
+
+        update_candidate: function(candidate) {
             this.form.filter.candidate = candidate;
+        },
+
+        search: function() {
             this.$emit('form_changed', this.form);
+            this.update_hash_with_form();
         },
     },
 
     mounted: function() {
         this.get_tags();
+        var hash_form = get_from_hash('form');
+        if(hash_form) {
+            this.form = hash_form;
+        } else {
+            var candidate = null;
+            if (window.location.hash.startsWith('#candidate=')) {
+                candidate = window.location.hash.substring(11)
+            }
 
-        // See if there's a candidate specified in the URL. TODO: Improve.
-        var candidate = 'all';
-        if (window.location.hash.startsWith('#candidate=')) {
-            candidate = window.location.hash.substring(11);
+            if (candidate) {
+                this.form.filter.candidate = candidate;
+            } else {
+                this.search();
+            }
         }
-        this.search(candidate);
+    },
+
+    watch: {
+        form: {
+            deep: true,
+            handler: function() {
+                this.search();
+            },
+        },
     },
 
     props: ['loaders'],
@@ -761,7 +807,7 @@ Vue.component('endorser-accounts', {
 
     methods: {
         url: function(account) {
-            return 'https://twitter.com/' + account.username;
+            return 'https://twitter.com/' + account.u;
         },
     },
 
