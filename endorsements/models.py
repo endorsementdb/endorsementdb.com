@@ -255,7 +255,7 @@ class Quote(models.Model):
     get_source_display.allow_tags = True
 
     def __unicode__(self):
-        return self.text
+        return self.text[:150]
 
     class Meta:
         ordering = ['date']
