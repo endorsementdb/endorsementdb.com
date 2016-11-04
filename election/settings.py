@@ -15,8 +15,6 @@ import os
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-MEMCACHED_HOST = os.environ.get('MEMCACHED_HOST')
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.9/howto/deployment/checklist/
@@ -44,12 +42,8 @@ INSTALLED_APPS = [
     'debug_toolbar',
 ]
 
-# Only add cache-related middleware if the MEMCACHED_HOST env var is set.
-MIDDLEWARE_CLASSES = []
-if MEMCACHED_HOST:
-    MIDDLEWARE_CLASSES.append('django.middleware.cache.UpdateCacheMiddleware')
-
-MIDDLEWARE_CLASSES.extend([
+MIDDLEWARE_CLASSES = [
+    'django.middleware.cache.UpdateCacheMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -59,10 +53,8 @@ MIDDLEWARE_CLASSES.extend([
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
-])
-
-if MEMCACHED_HOST:
-    MIDDLEWARE_CLASSES.append('django.middleware.cache.FetchFromCacheMiddleware')
+    'django.middleware.cache.FetchFromCacheMiddleware'
+]
 
 ROOT_URLCONF = 'election.urls'
 
@@ -142,10 +134,8 @@ JQUERY_URL = ''
 INTERNAL_IPS = ['127.0.0.1']
 
 
-if MEMCACHED_HOST:
-    CACHES = {
-        'default': {
-            'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
-            'LOCATION': MEMCACHED_HOST + ':11211',
-        }
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
     }
+}
