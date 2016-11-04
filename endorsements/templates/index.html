@@ -17,8 +17,8 @@
     <p>
         This project is an attempt to track candidate endorsements in the 2016
         US presidential election in a structured, non-partisan manner. We
-        currently have {{ count }} endorsers (including both individual people
-        and organisations) in our database.
+        currently have {{ counts.total }} endorsers in our database. Use the
+        form below to sort and filter endorsements by endorser attributes or by candidate.
     </p>
     <p>
         It's still under active development, so if you notice a bug, or
@@ -52,6 +52,11 @@
             <div class="ui basic center aligned segment">
                 <div class="ui buttons">
                     <button class="ui button"
+                            :class="{active: tab == 'counts'}"
+                            @click="tab = 'counts'">
+                        Counts
+                    </button>
+                    <button class="ui button"
                             :class="{active: tab == 'positions'}"
                             @click="tab = 'positions'">
                         Positions
@@ -61,31 +66,46 @@
                             @click="tab = 'tags'">
                         Tags
                     </button>
-                    <button class="ui button"
-                            :class="{active: tab == 'json'}"
-                            @click="tab = 'json'">
-                        JSON
-                    </button>
                 </div>
             </div>
-            <table class="ui striped table" v-if="tab == 'tags'">
+            <div class="ui basic center aligned inverted segment"
+                 v-if="tab == 'counts'">
+                <p>
+                    There are
+                    {{ stats.count.endorsers }} endorsers
+                    with
+                    {{ stats.count.endorsements }} endorsements.
+                </p>
+                <p>
+                    The mean number of followers
+                    of each Twitter account is
+                    {{ stats.followers.average }}.
+                </p>
+            </div>
+            <table class="ui compact striped table" v-if="tab == 'tags'">
                 <thead>
                     <tr>
                         <th>
-                            Position
+                            Tag
                         </th>
                         <th>
                             Count
                         </th>
+                        <th>
+                            %
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="(tag_count, tag_name, tag_index) in stats.tags">
+                    <tr v-for="(tag, tag_index) in stats.tags">
                         <td>
-                            {{ tag_name }}
+                            {{ tag.name }}
                         </td>
                         <td>
-                            {{ tag_count }}
+                            {{ tag.count }}
+                        </td>
+                        <td>
+                            {{ percentage(tag.count, stats) }}
                         </td>
                     </tr>
                 </tbody>
@@ -99,26 +119,27 @@
                         <th>
                             Count
                         </th>
+                        <th>
+                            %
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="(pos_val, pos_name, pos_index) in stats.positions">
+                    <tr v-for="(position, pos_index) in stats.positions">
                         <td>
-                            <i class="green inverted circular comment icon"
-                               v-if="pos_name.indexOf('Endorse') >= 0"></i>
-                            <i class="red inverted circular comment icon"
-                               v-if="pos_name.indexOf('Oppose') >= 0"></i>
-                            <i class="blue inverted circular comment icon"
-                               v-if="pos_name.indexOf('Support') >= 0"></i>
-                            {{ pos_name }}
+                            <i class="small inverted circular comment icon"
+                               :class="position.icon"></i>
+                            {{ position.name }}
                         </td>
                         <td>
-                            {{ pos_val }}
+                            {{ position.count }}
+                        </td>
+                        <td>
+                            {{ percentage(position.count, stats) }}
                         </td>
                     </tr>
                 </tbody>
             </table>
-            <pre v-if="tab == 'json'"><code>{{ stats | json }}</code></pre>
         </div>
     </div>
 </template>
@@ -152,91 +173,169 @@
 
 <template id="endorser-sort-filter-form-template">
     <div>
-
-        <div class="ui top attached inverted segment">
-            <div class="ui inverted header">
-                <i class="loading notched circle icon" v-show="loaders != 0"></i>
-                Sort
-            </div>
-        </div>
         <div class="ui attached segment">
-            <div class="ui form">
-                <div class="three fields">
-                    <div class="field"
-                         v-for="sort_option in options.sorting">
-                        <label>{{ sort_option.name }}</label>
-                        <div class="ui basic buttons">
-                            <button class="ui button"
-                                    v-for="option in sort_option.options"
-                                    :class="{active: sorting_by(sort_option.value, option.value)}"
-                                    @click="sort(sort_option.value, option.value)">
-                                {{ option.name }}
-                            </button>
+            <div class="ui middle aligned grid">
+                <div class="two wide column">
+                    <h3>
+                        <i class="sort icon"></i>
+                        Sort
+                    </h3>
+                </div>
+                <div class="fourteen wide right aligned column">
+                    <div class="ui form">
+                        <div class="fields" style="margin: 0; float: right">
+                            <div class="inline field"
+                                 v-for="sort_option in options.sorting">
+                                <label>{{ sort_option.name }}</label>
+                                <div class="ui buttons">
+                                    <button class="ui button"
+                                            v-for="option in sort_option.options"
+                                            :class="{grey: sorting_by(sort_option.value, option.value)}"
+                                            @click="sort(sort_option.value, option.value)">
+                                        {{ option.name }}
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="ui attached inverted segment">
-            <div class="ui middle aligned two column grid">
-                <div class="column">
-                    <div class="ui inverted header">
-                        <i class="loading notched circle icon" v-show="loaders != 0"></i>
-                        Filter
-                    </div>
+        <div class="ui attached segment">
+            <div class="ui middle aligned grid">
+                <div class="two wide column">
+                    <h3>
+                        <i class="filter icon"></i> Filter
+                    </h3>
                 </div>
-                <div class="right aligned column">
+                <div class="fourteen wide right aligned column">
                     <div class="ui buttons">
                         <button v-for="tab in tabs.all"
                                 @click="select_tab(tab.value)"
                                 class="ui button"
-                                :class="tabs.current == tab.value ? 'active' : ''">
+                                :class="tabs.current == tab.value ? 'grey' : ''">
                             {{ tab.name }}
                         </button>
                     </div>
                 </div>
             </div>
-        </div>
-        <div class="ui attached segment"
-             v-if="tabs.current == 'organisation'">
-            <div class="ui form">
-                <div class="field">
-                    <label>Tags</label>
-                    <endorser-filter-form-exclusive-tags :tags="options.filter.tags.org"
-                                               :selected_tags="form.filter.tags">
-                    </endorser-filter-form-exclusive-tags>
-                </div>
-            </div>
-        </div>
-        <div class="ui attached segment"
-             v-if="tabs.current == 'personal'">
-            <div class="ui form">
-                <div class="field"
-                     v-for="tag_group in options.filter.tags.personal">
-                    <label>{{ tag_group.name }}</label>
-                    <div v-if="tag_group.exclusive">
-                        <endorser-filter-form-exclusive-tags :tags="tag_group.tags"
-                                                             :selected_tags="form.filter.tags">
+            <div v-if="tabs.current == 'organization'">
+                <br />
+                <div class="ui form">
+                    <div class="field">
+                        <label>Tags</label>
+                        <endorser-filter-form-exclusive-tags :tags="options.filter.tags.org"
+                                                   :selected_tags="form.filter.tags">
                         </endorser-filter-form-exclusive-tags>
                     </div>
-                    <div v-if="!tag_group.exclusive">
-                        <endorser-filter-form-tags :tags="tag_group.tags"
-                                                   :selected_tags="form.filter.tags">
-                        </endorser-filter-form-tags>
+                </div>
+            </div>
+            <div v-if="tabs.current == 'personal'">
+                <br />
+                <div class="ui form">
+                    <div class="field"
+                         v-for="tag_group in options.filter.tags.personal">
+                        <label>{{ tag_group.name }}</label>
+                        <div v-if="tag_group.exclusive">
+                            <endorser-filter-form-exclusive-tags :tags="tag_group.tags"
+                                                                 :selected_tags="form.filter.tags">
+                            </endorser-filter-form-exclusive-tags>
+                        </div>
+                        <div v-if="!tag_group.exclusive">
+                            <endorser-filter-form-tags :tags="tag_group.tags"
+                                                       :selected_tags="form.filter.tags">
+                            </endorser-filter-form-tags>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="ui center aligned bottom attached inverted segment">
-            <button class="ui button"
-                    :disabled="loaders != 0"
-                    :class="{disabled: loaders != 0}"
-                    @click="search">
-                <i class="loading notched circle icon"
-                   v-show="loaders != 0"></i>
-                Search
-            </button>
+        <div class="ui center aligned bottom attached secondary segment">
+            <div class="ui labeled button" :class="{disabled: loaders != 0}">
+                <button class="ui large icon black button"
+                        :disabled="loaders != 0"
+                        :class="{'basic': form.filter.candidate != 'all'}"
+                        @click="search('all')">
+                    <i class="filter icon"></i>
+                    All
+                </button>
+                <a class="ui basic black left pointing label">
+                {% endverbatim %}
+                    {{ counts.total }}
+                {% verbatim %}
+                </a>
+            </div>
+            <div class="ui labeled button" :class="{disabled: loaders != 0}">
+                <button class="ui large blue icon button"
+                        :disabled="loaders != 0"
+                        :class="{'basic': form.filter.candidate != 'clinton'}"
+                        @click="search('clinton')">
+                    <i class="filter icon"></i>
+                    Clinton
+                </button>
+                <a class="ui basic blue left pointing label">
+                {% endverbatim %}
+                    {{ counts.clinton }}
+                {% verbatim %}
+                </a>
+            </div>
+            <div class="ui labeled button" :class="{disabled: loaders != 0}">
+                <button class="ui large red icon button"
+                        :disabled="loaders != 0"
+                        :class="{'basic': form.filter.candidate != 'trump'}"
+                        @click="search('trump')">
+                    <i class="filter icon"></i>
+                    Trump
+                </button>
+                <a class="ui basic red left pointing label">
+                {% endverbatim %}
+                    {{ counts.trump }}
+                {% verbatim %}
+                </a>
+            </div>
+            <div class="ui labeled button" :class="{disabled: loaders != 0}">
+                <button class="ui large green icon button"
+                        :disabled="loaders != 0"
+                        :class="{'basic': form.filter.candidate != 'stein'}"
+                        @click="search('stein')">
+                    <i class="filter icon"></i>
+                    Stein
+                </button>
+                <a class="ui basic green left pointing label">
+                {% endverbatim %}
+                    {{ counts.stein }}
+                {% verbatim %}
+                </a>
+            </div>
+            <div class="ui labeled button" :class="{disabled: loaders != 0}">
+                <button class="ui large orange icon button"
+                        :disabled="loaders != 0"
+                        :class="{'basic': form.filter.candidate != 'pence'}"
+                        @click="search('pence')">
+                    <i class="filter icon"></i>
+                    Pence
+                </button>
+                <a class="ui basic orange left pointing label">
+                {% endverbatim %}
+                    {{ counts.pence }}
+                {% verbatim %}
+                </a>
+            </div>
+            <div class="ui labeled button" :class="{disabled: loaders != 0}">
+                <button class="ui large yellow icon button"
+                        :disabled="loaders != 0"
+                        :class="{'basic': form.filter.candidate != 'johnson'}"
+                        @click="search('johnson')">
+                    <i class="filter icon"></i>
+                    Johnson
+                </button>
+                <a class="ui basic yellow left pointing label">
+                {% endverbatim %}
+                    {{ counts.johnson }}
+                {% verbatim %}
+                </a>
+            </div>
         </div>
     </div>
 </template>
@@ -416,16 +515,23 @@
 
         <div class="ui divider"></div>
 
-        <endorser-search-stats :stats="stats">
-        </endorser-search-stats>
+        <div v-if="endorsers != null">
+            <div v-if="endorsers.length > 0">
+                <endorser-search-stats :stats="stats">
+                </endorser-search-stats>
+                <div class="ui divider"></div>
+            </div>
 
-        <div class="ui divider"></div>
-
-        <div class="ui three cards">
-            <endorser-card v-for="(endorser, endorser_index) in endorsers"
-                           v-if="endorser_index < endorsers_shown"
-                           :endorser="endorser">
-            </endorser-card>
+            <div class="ui three cards">
+                <endorser-card v-for="(endorser, endorser_index) in endorsers"
+                               v-if="endorser_index < endorsers_shown"
+                               :endorser="endorser">
+                </endorser-card>
+            </div>
+        </div>
+        <div class="ui info message"
+             v-if="endorsers != null && endorsers.length == 0">
+            Could not find any endorsers.
         </div>
     </div>
 
@@ -442,6 +548,39 @@
 
 {% block scripts %}
 <script>
+function get_form_from_hash() {
+    if(!window.location.hash) return {};
+    var hash_pairs = window.location.hash.substring(1).split('&');
+
+    var hash_dict = {};
+    hash_pairs.forEach(function(pair) {
+        var split = pair.split('=');
+
+        var field_name = split[0];
+
+        if(split.length == 1) {
+            hash_dict[field_name] = true;
+        } else {
+            var field_value = split[1];
+            hash_dict[field_name] = field_value;
+        }
+    });
+    if(typeof hash_dict.form === 'undefined') {
+        return {};
+    }
+
+    var serialized = hash_dict.form;
+    return JSON.parse(decodeURIComponent(escape(atob(serialized))));
+}
+
+get_form_from_hash();
+
+function update_hash_with_form(form) {
+    var serialized = 'form=';
+    serialized += JSON.stringify(form);
+    serialized = btoa(unescape(encodeURIComponent(JSON.stringify(form))));
+}
+
 Vue.component('endorser-search-stats', {
     template: '#endorser-search-stats-template',
 
@@ -455,6 +594,10 @@ Vue.component('endorser-search-stats', {
     methods: {
         toggle_expanded: function() {
             this.expanded = !this.expanded;
+        },
+        percentage: function(num, stats) {
+            var total = stats.count.endorsers;
+            return (100 * num / total).toFixed(1);
         },
     },
 
@@ -513,11 +656,6 @@ Vue.component('endorser-sort-filter-form', {
     template: '#endorser-sort-filter-form-template',
 
     data: function() {
-        // See if there's a candidate specified in the URL. TODO: Improve.
-        var candidate = null;
-        if (window.location.hash.startsWith('#candidate=')) {
-            candidate = window.location.hash.substring(11);
-        }
         return {
             form: {
                 sort: {
@@ -527,15 +665,15 @@ Vue.component('endorser-sort-filter-form', {
                 filter: {
                     tags: [],
                     mode: 'none',
-                    candidate: candidate,
+                    candidate: 'all',
                 },
             },
             tabs: {
                 current: 'none',
                 all: [
-                    { name: 'No filtering', value: 'none' },
+                    { name: 'All endorsements', value: 'none' },
                     { name: 'People only', value: 'personal' },
-                    { name: 'Organisations only', value: 'organisation' },
+                    { name: 'Organizations only', value: 'organization' },
                 ],
             },
             options: {
@@ -598,14 +736,21 @@ Vue.component('endorser-sort-filter-form', {
             this.tabs.current = tab;
         },
 
-        search: function() {
+        search: function(candidate) {
+            this.form.filter.candidate = candidate;
             this.$emit('form_changed', this.form);
         },
     },
 
     mounted: function() {
         this.get_tags();
-        this.search();
+
+        // See if there's a candidate specified in the URL. TODO: Improve.
+        var candidate = 'all';
+        if (window.location.hash.startsWith('#candidate=')) {
+            candidate = window.location.hash.substring(11);
+        }
+        this.search(candidate);
     },
 
     props: ['loaders'],
@@ -687,7 +832,7 @@ new Vue({
         });
 
         component.$on('maybe-load-more-endorsers', function() {
-            if(component.endorsers_shown < component.endorsers.length) {
+            if(component.endorsers && component.endorsers_shown < component.endorsers.length) {
                 component.endorsers_shown += component.page_size;
             }
         });
@@ -695,7 +840,7 @@ new Vue({
 
     data: {
         loaders: 0,
-        endorsers: [],
+        endorsers: null,
         page_size: 9,
         endorsers_shown: 9,
         stats: null,
@@ -705,7 +850,7 @@ new Vue({
         get_endorsers: function(form) {
             var component = this;
 
-            component.endorsers = [];
+            component.endorsers = null;
             component.endorsers_shown = component.page_size;
             component.stats = null;
 
@@ -720,12 +865,46 @@ new Vue({
                 contentType: 'application/json'
             })
             .done(function(response) {
-                if(response.endorsers.length === 0) {
-                    component.end = true;
-                }
-
                 var endorsers = response.endorsers;
                 component.endorsers = endorsers;
+
+                var sorted_tags = [];
+                for(var tag_name in response.stats.tags) {
+                    sorted_tags.push({
+                        name: tag_name,
+                        count: response.stats.tags[tag_name],
+                    });
+                }
+                sorted_tags.sort(function(x,y) {
+                    return y.count - x.count;
+                });
+                response.stats.tags = sorted_tags;
+
+                var sorted_positions = [];
+                for(var position_name in response.stats.positions) {
+                    var icon = '';
+
+                    if(position_name.indexOf('Endorse') >= 0) icon = 'green';
+                    if(position_name.indexOf('Support') >= 0) icon = 'blue';
+                    if(position_name.indexOf('Oppose') >= 0) icon = 'red';
+
+                    sorted_positions.push({
+                        name: position_name,
+                        icon: icon,
+                        count: response.stats.positions[position_name],
+                    });
+                }
+                sorted_positions.sort(function(x,y) {
+                    return y.count - x.count;
+                });
+                response.stats.positions = sorted_positions;
+
+                var avg_followers = response.stats.followers.total;
+                if (avg_followers > 0) {
+                    avg_followers /= response.stats.followers.count;
+                    avg_followers = Math.floor(avg_followers);
+                    response.stats.followers.average = avg_followers;
+                }
 
                 component.stats = response.stats;
 

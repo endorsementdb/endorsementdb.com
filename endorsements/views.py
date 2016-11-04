@@ -22,7 +22,7 @@ def get_endorsers(filter_params, sort_params):
     mode = filter_params.get('mode')
     if mode == 'personal':
         filters['is_personal'] = True
-    elif mode == 'organisation':
+    elif mode == 'organization':
         filters['is_personal'] = False
 
     candidate = filter_params.get('candidate')
@@ -178,6 +178,10 @@ def get_endorsers(filter_params, sort_params):
             'absolute_url': endorser.get_absolute_url(),
         })
 
+    if not stats['followers']:
+        stats['followers']['total'] = 0
+        stats['followers']['count'] = 0
+
     return endorsers, stats
 
 
@@ -250,8 +254,14 @@ def get_endorsements(request):
 
 
 def index(request):
+    counts = {}
+    for position in Position.objects.all():
+        if position.slug:
+            counts[position.slug] = Endorser.objects.filter(endorsement__position=position).distinct().count()
+    counts['total'] = Endorser.objects.count()
+
     context = {
-        'count': Endorser.objects.count(),
+        'counts': counts,
     }
     return render(request, 'index.html', context)
 
