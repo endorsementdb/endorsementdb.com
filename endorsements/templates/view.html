@@ -48,6 +48,7 @@ View endorser
     <div class="five wide column">
         <div class="ui segment">
             {% include "accounts_snippet.html" with accounts=endorser.account_set.all %}
+            {% if request.user.is_staff %}
             <form class="ui action input" method="post" action="{% url 'add-account' endorser.pk %}">
                 <input type="text" placeholder="Username" name="username" />
                 <button type="submit" class="ui green icon button">
@@ -55,6 +56,7 @@ View endorser
                 </button>
                 {% csrf_token %}
             </form>
+            {% endif %}
         </div>
     </div>
 </div>

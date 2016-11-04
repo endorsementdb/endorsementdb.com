@@ -203,10 +203,23 @@ class EventAdmin(admin.ModelAdmin):
     list_display = ('name', 'start_date', 'end_date')
 
 
+def confirm_endorsements(modeladmin, request, queryset):
+    queryset.update(confirmed=True)
+
+    modeladmin.message_user(
+        request,
+        "Confirmed {n} endorsements".format(
+            n=queryset.count(),
+        ),
+        messages.SUCCESS,
+    )
+
+
 @admin.register(Endorsement)
 class EndorsementAdmin(admin.ModelAdmin):
     list_display = ('endorser', 'position', 'get_truncated_quote', 'get_date')
-    list_filter = ('position',)
+    list_filter = ('position', 'confirmed')
+    actions = [confirm_endorsements]
 
 
 @admin.register(Comment)

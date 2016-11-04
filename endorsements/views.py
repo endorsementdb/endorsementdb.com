@@ -3,6 +3,7 @@ import json
 import random
 
 from django.contrib import messages
+from django.contrib.admin.views.decorators import staff_member_required
 from django.core.cache import cache
 from django.db.models import Count
 from django.http import Http404, JsonResponse
@@ -309,6 +310,7 @@ def view_endorser(request, pk):
     return render(request, 'view.html', context)
 
 
+@staff_member_required
 @require_POST
 def add_account(request, pk):
     endorser = get_object_or_404(Endorser, pk=pk)
@@ -373,7 +375,8 @@ def add_endorsement(request, pk):
     endorsement = Endorsement.objects.create(
         position=position,
         endorser=endorser,
-        quote=quote
+        quote=quote,
+        confirmed=request.user.is_staff,
     )
 
     messages.add_message(
@@ -384,6 +387,7 @@ def add_endorsement(request, pk):
 
     return redirect('view-endorser', pk=pk)
 
+
 def random_endorser(request):
     endorser_count = Endorser.objects.count()
     random_endorser_index = random.randint(0, endorser_count - 1)
@@ -393,6 +397,7 @@ def random_endorser(request):
         'endorser': random_endorser,
     }
     return render(request, 'random_endorser.html', context)
+
 
 def charts(request):
     context = {}

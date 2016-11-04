@@ -45,10 +45,17 @@ class EndorsementForm(forms.Form):
         required=False,
     )
     context = forms.CharField(
-        widget=forms.Textarea(attrs={'rows': 1}),
+        widget=forms.Textarea(attrs={
+            'rows': 1,
+            'placeholder': 'e.g., "In an editorial endorsement" (leave blank if no context is required)'
+        }),
         required=False,
     )
     date = forms.DateField(widget=Html5DateInput)
-    source_url = forms.URLField()
-    source_name = forms.CharField()
+    source_url = forms.URLField(
+        widget=forms.TextInput(attrs={'placeholder': 'http://example.com'})
+    )
+    source_name = forms.CharField(
+        widget=forms.TextInput(attrs={'placeholder': 'e.g., Politico'})
+    )
     event = forms.ModelChoiceField(Event.objects.all(), required=False)
