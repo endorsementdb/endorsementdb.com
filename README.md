@@ -10,14 +10,38 @@ race in a way that is structured, searchable, and visual.
 Imagine the contents of these Wikipedia pages, stored in a format that allows
 you to filter and sort arbitrarily:
 
-* [List of Hillary Clinton presidential campaign endorsements, 2016][clinton]
-* [List of Donald Trump presidential campaign endorsements, 2016][trump]
-* [List of Jill Stein presidential campaign endorsements, 2016][stein]
-* [List of Gary Johnson presidential campaign endorsements, 2016][johnson]
+*   [Newspaper endorsements in the United States presidential election,
+*   2016](https://en.wikipedia.org/wiki/Newspaper_endorsements_in_the_United_States_presidential_election,_2016)
+    *   [Daily
+    *   newspapers](https://en.wikipedia.org/wiki/Newspaper_endorsements_in_the_United_States_presidential_election,_2016#Daily_newspapers)
+    *   - up to date as of November 3, 11:45PM
+    *   [Weekly
+    *   newspapers](https://en.wikipedia.org/wiki/Newspaper_endorsements_in_the_United_States_presidential_election,_2016#Weekly_newspapers)
+    *   - in progress
+    *   [Magazines](https://en.wikipedia.org/wiki/Newspaper_endorsements_in_the_United_States_presidential_election,_2016#Magazines)
+    *   - up to date as of November 3, 11:45PM
+    *   [College and university
+    *   newspapers](https://en.wikipedia.org/wiki/Newspaper_endorsements_in_the_United_States_presidential_election,_2016#College_and_university_newspapers)
+    *   - skipping
+    *   [Endorsements by foreign
+    *   periodicals](https://en.wikipedia.org/wiki/Newspaper_endorsements_in_the_United_States_presidential_election,_2016#Foreign_newspapers_and_magazines)
+    *   - in progress
+*   [List of Jill Stein presidential campaign endorsements,
+*   2016](https://en.wikipedia.org/wiki/List_of_Jill_Stein_presidential_campaign_endorsements,_2016)
+*   - up to date as of November 3, 11:45PM
+*   [List of Gary Johnson presidential campaign endorsements,
+*   2016](https://en.wikipedia.org/wiki/List_of_Gary_Johnson_presidential_campaign_endorsements,_2016)
+*   - in progress
+*   [List of Hillary Clinton presidential campaign endorsements,
+*   2016](https://en.wikipedia.org/wiki/List_of_Hillary_Clinton_presidential_campaign_endorsements,_2016)
+*   - in progress
+*   [List of Donald Trump presidential campaign endorsements,
+*   2016](https://en.wikipedia.org/wiki/List_of_Donald_Trump_presidential_campaign_endorsements,_2016)
+*   - in progress
 
 ## Features
 
-* Can browse endorsements from over 500 entities (celebrities, politicians,
+* Can browse endorsements from over 700 entities (celebrities, politicians,
   newspapers, etc), including:
   * Who the endorser is, with some tags
   * Number of followers on Twitter (if any)
@@ -31,8 +55,8 @@ you to filter and sort arbitrarily:
   * Tags:
     * Orgs: publication / political org / corporation / etc
     * People: gender, party affilitation, URM, occuptation, govt positions
-  * Position (which candidate they support, usually) - currently only done with
-    hash parameters (e.g., #candidate=trump)
+  * Position (which candidate they support), with hash parameter
+    support (e.g., #candidate=trump)
 
 ### To do
 
@@ -75,9 +99,9 @@ you to filter and sort arbitrarily:
 3. Edit elections/settings.py to set the following variables (or set them as
    environment variables):
    * [`SECRET_KEY`][SECRET_KEY]: a random key used for securing session
-   * `DB_USER`, `DB_NAME`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT` according to your
-     database setup (if you don't already have one, you can just [use sqlite];
-     if you want to use PostgreSQL, you'll need to install `psycopg2`)
+   * `DB_USER`, `DB_NAME`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT` according to
+     your database setup (if you don't already have one, you can just [use
+     sqlite]; if you want to use PostgreSQL, you'll need to install `psycopg2`)
 4. Run `django manage.py migrate`
 5. Run `django manage.py loaddata endorsements.json` to load all the
    endorsement-related data that I have so far
@@ -103,10 +127,10 @@ that candidate. Which is unfortunate, because in an election like this one --
 where a significant number of voters haven't fully made up their mind --
 endorsements can have an impact. Even if an individual endorsement doesn't
 change anyone's mind, it can still provide context on _why_ people support that
-candidate, which may help bridge the empathy gap in this polarised election
+candidate, which may help bridge the empathy gap in this polarized election
 year.
 
-I imagined a centralised store of endorsements for _all_ candidates, complete
+I imagined a centralized store of endorsements for _all_ candidates, complete
 with context behind each endorsement and endorser, with some sort of Twitter
 integration to make it easy to filter by the people you already follow just
 so you can start with the endorsements that are relevant to you. There would
@@ -116,7 +140,8 @@ experience a little less dry. Since I couldn't find anything like this, and
 since I love projects that involve classifying and structuring data, I figured
 I'd try to build it myself.
 
-(For the record, I am incredibly grateful to the maintainers of the aforementioned Wikipedia
+(For the record, I am incredibly grateful to the maintainers of the
+aforementioned Wikipedia
 pages -- they make my life a lot easier -- but, given the length and format of
 those pages, I wouldn't be surprised if I were the only non-maintainer who has
 actually read them all the way through. While Wikipedia pages can be great for
@@ -135,10 +160,6 @@ beyond.)
 
 [logo]: https://s3.amazonaws.com/endorsementdb.com/images/endorsementdb.png
 [EndorsementDB.com]: http://endorsementdb.com
-[clinton]: https://en.wikipedia.org/wiki/List_of_Hillary_Clinton_presidential_campaign_endorsements,_2016
-[trump]: https://en.wikipedia.org/wiki/List_of_Donald_Trump_presidential_campaign_endorsements,_2016
-[stein]: https://en.wikipedia.org/wiki/List_of_Jill_Stein_presidential_campaign_endorsements,_2016
-[johnson]: https://en.wikipedia.org/wiki/List_of_Gary_Johnson_presidential_campaign_endorsements,_2016
 [@endorsementdb]: https://twitter.com/endorsementdb
 [Macromeasures]: https://macromeasures.com
 [@dellsystem]: https://twitter.com/dellsystem
