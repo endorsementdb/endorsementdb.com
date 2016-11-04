@@ -324,9 +324,8 @@ class Position(models.Model):
         return self.get_name_display()
 
     def get_name_display(self):
-        if self.past_tense_prefix and self.present_tense_prefix:
-            return "{past}/{present} {suffix}".format(
-                past=self.past_tense_prefix,
+        if self.present_tense_prefix:
+            return "{present} {suffix}".format(
                 present=self.present_tense_prefix,
                 suffix=self.suffix
             )
