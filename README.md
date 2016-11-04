@@ -40,39 +40,6 @@ you to filter and sort arbitrarily:
   * Position (which candidate they support), with hash parameter
     support (e.g., #candidate=trump)
 
-### To do
-
-* About page
-* Legend on homepage
-* Better filtering -- more things to filter by
-  * Date of endorsement
-  * Event (before/during/after)
-  * Type of endorsement (opposed/supported a particular candidate)
-  * Should be able to make complex queries like "show me all the male
-    Republicans who did not rescind their endorsement of Trump after the
-    Access Hollywood leak" or "show me all the Democrats who endorsed Sanders
-    and haven't endorsed Hillary yet"
-* Keep adding endorsements (at least 1k)
-* Integrate charts and other stats (by tags/position) for queries
-  * e.g., you should be able to find the gender breakdown of Republicans who
-    endorsed Clinton
-  * compare stats to baseline
-* More fine-grained memcached control?
-* Split the CSS into a separate file
-
-### Stretch goals
-
-* Add more events
-* More tags (lawyer, doctor, other government positions)
-* Better descriptions (currently pulled from Twitter for the most part)
-* Log in with Twitter and see who your followers endorse
-* Integration with the [@endorsementdb] Twitter account
-* Allowing guests to submit new endorsements, to be held in a moderation queue
-* Integrate non-endorsement comments
-  * Ability to view them on the endorser view page
-  * Ability to filter comments by candidate
-* Add in all the endorsements on the Wikipedia pages that have a valid source
-
 ## Setup instructions
 
 1. Clone this repository
