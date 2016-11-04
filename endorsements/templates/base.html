@@ -5,6 +5,10 @@
         <link rel="stylesheet"
               href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.2.6/semantic.min.css"/>
         <style type="text/css">
+        body {
+            /* Otherwise, it flickers when filtering */
+            overflow-y: scroll;
+        }
         .edit-buttons {
             float: right;
             margin-top: 20px;
