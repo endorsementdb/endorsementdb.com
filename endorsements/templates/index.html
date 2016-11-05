@@ -188,7 +188,7 @@
                                 <div class="ui buttons">
                                     <button class="ui button"
                                             v-for="option in sort_option.options"
-                                            :class="{grey: sorting_by(sort_option.value, option.value)}"
+                                            :class="{black: sorting_by(sort_option.value, option.value)}"
                                             @click="sort(sort_option.value, option.value)">
                                         {{ option.name }}
                                     </button>
@@ -212,7 +212,7 @@
                         <button v-for="tab in tabs.all"
                                 @click="select_tab(tab.value)"
                                 class="ui button"
-                                :class="form.filter.mode == tab.value ? 'grey' : ''">
+                                :class="form.filter.mode == tab.value ? 'black' : ''">
                             {{ tab.name }}
                         </button>
                     </div>
@@ -249,90 +249,60 @@
                 </div>
             </div>
         </div>
-        <div class="ui center aligned bottom attached secondary segment">
-            <div class="ui labeled button" :class="{disabled: loaders != 0}">
-                <button class="ui large icon black button"
-                        :disabled="loaders != 0"
-                        :class="{'basic': form.filter.candidate != 'all'}"
-                        @click="update_candidate('all')">
-                    <i class="filter icon"></i>
-                    All
-                </button>
-                <a class="ui basic black left pointing label">
-                {% endverbatim %}
-                    {{ counts.total }}
-                {% verbatim %}
-                </a>
-            </div>
-            <div class="ui labeled button" :class="{disabled: loaders != 0}">
-                <button class="ui large blue icon button"
-                        :disabled="loaders != 0"
-                        :class="{'basic': form.filter.candidate != 'clinton'}"
-                        @click="update_candidate('clinton')">
-                    <i class="filter icon"></i>
-                    Clinton
-                </button>
-                <a class="ui basic blue left pointing label">
-                {% endverbatim %}
-                    {{ counts.clinton }}
-                {% verbatim %}
-                </a>
-            </div>
-            <div class="ui labeled button" :class="{disabled: loaders != 0}">
-                <button class="ui large red icon button"
-                        :disabled="loaders != 0"
-                        :class="{'basic': form.filter.candidate != 'trump'}"
-                        @click="update_candidate('trump')">
-                    <i class="filter icon"></i>
-                    Trump
-                </button>
-                <a class="ui basic red left pointing label">
-                {% endverbatim %}
-                    {{ counts.trump }}
-                {% verbatim %}
-                </a>
-            </div>
-            <div class="ui labeled button" :class="{disabled: loaders != 0}">
-                <button class="ui large green icon button"
-                        :disabled="loaders != 0"
-                        :class="{'basic': form.filter.candidate != 'stein'}"
-                        @click="update_candidate('stein')">
-                    <i class="filter icon"></i>
-                    Stein
-                </button>
-                <a class="ui basic green left pointing label">
-                {% endverbatim %}
-                    {{ counts.stein }}
-                {% verbatim %}
-                </a>
-            </div>
-            <div class="ui labeled button" :class="{disabled: loaders != 0}">
-                <button class="ui large orange icon button"
-                        :disabled="loaders != 0"
-                        :class="{'basic': form.filter.candidate != 'pence'}"
-                        @click="update_candidate('pence')">
-                    <i class="filter icon"></i>
-                    Pence
-                </button>
-                <a class="ui basic orange left pointing label">
-                {% endverbatim %}
-                    {{ counts.pence }}
-                {% verbatim %}
-                </a>
-            </div>
-            <div class="ui labeled button" :class="{disabled: loaders != 0}">
-                <button class="ui large yellow icon button"
-                        :disabled="loaders != 0"
-                        :class="{'basic': form.filter.candidate != 'johnson'}"
-                        @click="update_candidate('johnson')">
-                    <i class="filter icon"></i>
-                    Johnson
-                </button>
-                <a class="ui basic yellow left pointing label">
-                {% endverbatim %}
-                    {{ counts.johnson }}
-                {% verbatim %}
-                </a>
+        <div class="ui bottom attached secondary segment">
+            <div class="ui grid">
+                <div class="fourteen wide column">
+                    <div class="ui horizontal list">
+                        <div class="item" v-for="position in positions">
+                            <div class="ui labeled button">
+                                <button class="ui icon button"
+                                        :class="[form.filter.candidate == position.slug ? 'black' : position.colour]"
+                                        @click="update_candidate(position.slug)">
+                                    {{ position.name }}
+                                </button>
+                                <a class="ui basic left pointing label"
+                                   :class="[form.filter.candidate == position.slug ? 'black' : position.colour]">
+                                    {{ position.count }}
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <br />
+                    <div v-if="show_extra_positions"
+                         class="ui relaxed horizontal list">
+                        <div class="item" v-for="position in extra_positions"
+                        style="margin-left: 0; padding-left: 0">
+                            <div class="ui labeled button">
+                                <button class="ui icon button"
+                                        :class="[form.filter.candidate == position.slug ? 'black' : position.colour]"
+                                        @click="update_candidate(position.slug)">
+                                    {{ position.name }}
+                                </button>
+                                <a class="ui basic left pointing label"
+                                   :class="position.colour">
+                                    {{ position.count }}
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="two wide right aligned column">
+                    <div class="ui small basic icon button"
+                         data-position="top right"
+                         data-tooltip="The numbers show how many endorsers
+                         we have for each position, given the current filters.
+                         Click on a button to filter by that position. Black = currently selected.">
+                          <i class="help icon"></i>
+                    </div>
+                    <div class="ui small basic icon button"
+                         @click="show_extra_positions = !show_extra_positions"
+                         data-position="bottom right"
+                         data-tooltip="Show/hide more positions">
+                          <i class="icon"
+                             :class="[show_extra_positions ? 'minus' : 'plus']">
+                          </i>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -498,6 +468,9 @@
 <div id="app">
     <div>
         <endorser-sort-filter-form :loaders="loaders"
+                                   :positions="positions"
+                                   :extra_positions="extra_positions"
+                                   :show_extra_positions="show_extra_positions"
                                    @form_changed="get_endorsers">
         </endorser-sort-filter-form>
 
@@ -791,7 +764,7 @@ Vue.component('endorser-sort-filter-form', {
         },
     },
 
-    props: ['loaders'],
+    props: ['loaders', 'positions', 'extra_positions', 'show_extra_positions'],
 });
 
 Vue.component('endorser-accounts', {
@@ -878,6 +851,9 @@ new Vue({
 
     data: {
         loaders: 0,
+        positions: [],
+        extra_positions: [],
+        show_extra_positions: false,
         endorsers: null,
         page_size: 12,
         endorsers_shown: 9,
@@ -903,6 +879,10 @@ new Vue({
                 contentType: 'application/json'
             })
             .done(function(response) {
+                component.positions = response.positions;
+                component.extra_positions = response.extra_positions;
+                component.show_extra_positions = response.show_extra_positions;
+
                 var endorsers = response.endorsers;
                 component.endorsers = endorsers;
 

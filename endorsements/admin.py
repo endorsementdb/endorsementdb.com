@@ -185,7 +185,7 @@ class QuoteAdmin(admin.ModelAdmin):
 
 @admin.register(Position)
 class PositionAdmin(admin.ModelAdmin):
-    list_display = ('get_name_display', 'colour', 'slug')
+    list_display = ('get_name_display', 'colour', 'slug', 'show_on_load')
 
 
 @admin.register(Tag)

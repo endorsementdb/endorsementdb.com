@@ -30,10 +30,14 @@ def get_endorsers(filter_params, sort_params):
         filters['is_personal'] = False
 
     candidate = filter_params.get('candidate')
+    show_extra_positions = False
     if candidate:
         try:
             position = Position.objects.get(slug=candidate)
             filters['endorsement__position'] = position
+            # If this position is one of the extra positions, make sure those
+            # are visible on page load.
+            show_extra_positions = not position.show_on_load
         except Position.DoesNotExist:
             pass
 
@@ -93,6 +97,7 @@ def get_endorsers(filter_params, sort_params):
     )
     endorsers = []
     stats = collections.defaultdict(collections.Counter)
+    position_totals = collections.Counter()
     for i, endorser in enumerate(endorser_query):
         stats['count']['endorsers'] += 1
         tags = []
@@ -102,6 +107,7 @@ def get_endorsers(filter_params, sort_params):
 
         endorsements = []
         previous_position = None
+        position_pks = set()
         for i, endorsement in enumerate(endorser.endorsement_set.all()):
             # Ignore a position if it's the same as the previous one.
             position = endorsement.position
@@ -115,6 +121,7 @@ def get_endorsers(filter_params, sort_params):
                     stats['positions'][display] += 1
                     stats['count']['endorsements'] += 1
             previous_position = position
+            position_pks.add(position.pk)
 
             quote = endorsement.quote
             source = quote.source
@@ -143,6 +150,10 @@ def get_endorsers(filter_params, sort_params):
                 'sd': source.date.strftime('%b %d, %Y'),
                 'sn': source.name,
             })
+
+        for position_pk in position_pks:
+            position_totals[position_pk] += 1
+        position_totals['all'] += 1
 
         accounts = []
         max_followers = 0
@@ -180,9 +191,40 @@ def get_endorsers(filter_params, sort_params):
         stats['followers']['total'] = 0
         stats['followers']['count'] = 0
 
+    positions = [
+        {
+            'name': 'All',
+            'slug': 'all',
+            'colour': 'grey',
+            'count': position_totals['all'],
+        }
+    ]
+    extra_positions = []
+    position_query = Position.objects.annotate(count=Count('endorsement'))
+    for position in position_query.order_by('-count'):
+        if position.show_on_load:
+            to_append_to = positions
+        else:
+            to_append_to = extra_positions
+
+        if position.present_tense_prefix == 'Endorses':
+            name = position.suffix
+        else:
+            name = position.get_past_display()
+
+        to_append_to.append({
+            'name': name,
+            'slug': position.slug,
+            'colour': position.colour,
+            'count': position_totals[position.pk],
+        })
+
     return {
         'endorsers': endorsers,
         'stats': stats,
+        'positions': positions,
+        'extra_positions': extra_positions,
+        'show_extra_positions': show_extra_positions,
     }
 
 
