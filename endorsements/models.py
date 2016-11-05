@@ -176,6 +176,9 @@ class Account(models.Model):
 
     endorser = models.ForeignKey(Endorser)
 
+    class Meta:
+        ordering = ['-followers_count']
+
     def __unicode__(self):
         return '@{username} ({name})'.format(
             username=self.screen_name,

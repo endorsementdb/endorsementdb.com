@@ -339,20 +339,12 @@
 </template>
 
 <template id="endorser-accounts-template">
-    <div class="ui list">
-        <div v-for="account in accounts"
-             class="item">
-            <div class="content">
-                <i class="twitter icon"></i>
-                <a :href="url(account)">
-                    <strong>@{{ account.u }}</strong>
-                </a>
-
-                <span>
-                    {{ account.n }} followers
-                </span>
-             </div>
-         </div>
+    <div class="ui mini vertical buttons">
+        <a v-for="account in accounts" class="ui twitter icon button"
+           :href="url(account)"  :data-tooltip="'@' + account.u">
+            <i class="twitter icon"></i>
+            {{ account.n }} followers
+        </a>
     </div>
 </template>
 
@@ -455,50 +447,50 @@
 </template>
 
 <template id="endorser-card-template">
-    <div class="ui card">
-        <div class="image">
-            <img :src="'https://s3.amazonaws.com/endorsementdb.com/images/endorsers/' + endorser.p + '.png'" />
-        </div>
+    <div class="ui column">
+        <div class="ui segment">
+            <div class="ui grid">
+                <div class="four wide column">
+                    <img class="ui fluid image"
+                         :src="'https://s3.amazonaws.com/endorsementdb.com/images/endorsers/' + endorser.p + '.png'" />
+                    <br />
 
-        <div class="content">
-            <div class="header">
-                <a :href="'/endorser/' + endorser.p">
-                    {{ endorser.n }}
-                </a>
+                    <endorser-accounts :accounts="endorser.a">
+                    </endorser-accounts>
+                </div>
+                <div class="twelve wide column">
+                    <div class="ui header" :data-tooltip="endorser.d"
+                         data-position="top left">
+                        <a :href="'/endorser/' + endorser.p">
+                            {{ endorser.n }}
+                        </a>
+                        <div v-if="endorser.u" class="sub header">
+                            <a :href="endorser.u"
+                               class="meta">
+                                {{ endorser.u }}
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="ui divider"></div>
+
+                    <div class="ui small labels"
+                         v-if="endorser.t.length">
+                        <endorser-tags :tags="endorser.t">
+                        <endorser-tags>
+                    </div>
+
+                    <div class="ui divider"></div>
+
+                    <endorsements-accordion :endorser="endorser"
+                                            :endorsements="endorser.e">
+                    </endorsements-accordion>
+
+                    <comments-accordion :endorser="endorser"
+                                        :comments="endorser.c">
+                    </comments-accordion>
+                </div>
             </div>
-            <a :href="endorser.u"
-               v-if="endorser.u"
-               class="meta">
-                {{ endorser.u }}
-            </a>
-
-            <p v-if="endorser.d"
-               class="description">
-                {{ endorser.d }}
-            </p>
-
-            <div class="ui divider"></div>
-
-            <div class="ui labels"
-                 v-if="endorser.t.length">
-                <endorser-tags :tags="endorser.t">
-                <endorser-tags>
-            </div>
-
-            <div class="ui divider"></div>
-
-            <endorsements-accordion :endorser="endorser"
-                                    :endorsements="endorser.e">
-            </endorsements-accordion>
-
-            <comments-accordion :endorser="endorser"
-                                :comments="endorser.c">
-            </comments-accordion>
-
-            <div class="ui divider"></div>
-
-            <endorser-accounts :accounts="endorser.a">
-            </endorser-accounts>
         </div>
     </div>
 </template>
@@ -518,7 +510,7 @@
                 <div class="ui divider"></div>
             </div>
 
-            <div class="ui three cards">
+            <div class="ui two column stackable grid">
                 <endorser-card v-for="(endorser, endorser_index) in endorsers"
                                v-if="endorser_index < endorsers_shown"
                                :endorser="endorser">
@@ -887,7 +879,7 @@ new Vue({
     data: {
         loaders: 0,
         endorsers: null,
-        page_size: 9,
+        page_size: 12,
         endorsers_shown: 9,
         stats: null,
     },
