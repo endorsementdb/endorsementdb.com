@@ -1,12 +1,8 @@
-<a href="https://github.com/endorsementdb/endorsementdb.com#readme">
-    About
-</a>
 {% if request.user.is_staff %}
-<form class="ui action input" method="post" action="{% url 'add-endorser' %}">
+<form class="ui fluid action input" method="post" action="{% url 'add-endorser' %}">
     <input type="text" placeholder="Username" name="username" />
     <button type="submit" class="ui green icon button">
         <i class="user icon"></i>
-        Add endorser
     </button>
     {% csrf_token %}
 </form>

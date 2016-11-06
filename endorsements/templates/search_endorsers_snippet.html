@@ -1,0 +1,21 @@
+{% verbatim %}
+<div id="search">
+    <div class="ui fluid vertical menu">
+        <div class="item">
+            <div class="ui icon input">
+                <i class="search icon"></i>
+                <input type="text" placeholder="Search ..."
+                       v-model="input"
+                       @keyup.up="shift_index(-1)"
+                       @keyup.down="shift_index(1)"
+                       @keypress.enter="show_endorser" />
+            </div>
+        </div>
+        <a v-for="(endorser, i) in endorsers"
+           :href="'/endorser/' + endorser.pk"
+           class="item" :class="{active: i == active_index}">
+            <strong>{{ endorser.name }}</strong>
+        </a>
+    </div>
+</div>
+{% endverbatim %}

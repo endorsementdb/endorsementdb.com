@@ -36,6 +36,12 @@
         blockquote p {
             display: inline;
         }
+
+        #search .menu {
+            position: absolute;
+            z-index: 100;
+            margin-top: -25px;
+        }
         </style>
         <meta property="og:image" content="https://s3.amazonaws.com/endorsementdb.com/images/endorsementdb.png" />
     </head>
@@ -48,13 +54,18 @@
                 {% endblock %}
             </div>
             <br />
-            <div class="ui grid">
-                <div class="ten wide column">
+            <div class="ui middle aligned grid">
+                <div class="eight wide column">
                     <h1>{% block title %}{% endblock %}</h1>
                 </div>
-                <div class="six wide right aligned column">
-                    {% block buttons %}
-                    {% endblock %}
+                <div class="three wide right aligned column">
+                    <a href="https://github.com/endorsementdb/endorsementdb.com#readme">
+                        About
+                    </a>
+                    {% include 'add_endorser_snippet.html' %}
+                </div>
+                <div class="five wide column">
+                    {% include 'search_endorsers_snippet.html' %}
                 </div>
             </div>
             <br />
@@ -88,6 +99,52 @@
           ga('create', 'UA-86791540-1', 'auto');
           ga('send', 'pageview');
 
+        </script>
+        <script>
+        new Vue({
+            el: '#search',
+            data: {
+                input: '',
+                endorsers: [],
+                active_index: 0,
+            },
+            mounted: function() {
+            },
+            methods: {
+                shift_index: function(n) {
+                    this.active_index += n;
+                    this.active_index %= this.endorsers.length;
+                    if (this.active_index < 0) {
+                        this.active_index = 0;
+                    }
+                },
+                search: function() {
+                    if (this.input.length >= 2) {
+                        var component = this;
+
+                        $.getJSON('/api/search.json?q=' + this.input)
+                        .done(function(response) {
+                            component.endorsers = response.endorsers;
+                            component.active_index = 0;
+                        });
+                    } else {
+                        this.endorsers = [];
+                        this.active_index = 0;
+                    }
+                },
+                show_endorser: function() {
+                    if (this.endorsers) {
+                        var endorser = this.endorsers[this.active_index];
+                        window.location = '/endorser/' + endorser.pk;
+                    }
+                },
+            },
+            watch: {
+                input: function() {
+                    this.search();
+                },
+            },
+        });
         </script>
     </body>
 </html>

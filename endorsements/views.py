@@ -21,6 +21,32 @@ from endorsements.models import Account, Endorser, Candidate, Source, Quote, \
 from endorsements.templatetags.endorsement_extras import shorten
 
 
+def search_endorsers(request):
+    query = request.GET.get('q')
+    endorsers = []
+    endorser_pks = set()
+    if query:
+        # First find the endorsers whose names start with this query.
+        results = Endorser.objects.filter(name__istartswith=query)
+        for endorser in results[:5]:
+            endorser_pks.add(endorser.pk)
+            endorsers.append(endorser)
+
+        if results.count() < 5:
+            results = Endorser.objects.filter(name__icontains=query)
+            for endorser in results:
+                if endorser.pk in endorser_pks:
+                    continue
+
+                endorsers.append(endorser)
+                if len(endorsers) == 5:
+                    break
+
+    return JsonResponse({
+        'endorsers': [{'pk': e.pk, 'name': e.name} for e in endorsers],
+    })
+
+
 def get_endorsers(filter_params, sort_params):
     filters = {}
     mode = filter_params.get('mode')
