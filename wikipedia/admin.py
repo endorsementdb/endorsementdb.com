@@ -69,8 +69,19 @@ class ImportedEndorsementAdmin(admin.ModelAdmin):
         return obj.confirmed_endorser is not None
     is_confirmed.boolean = True
 
-    def show_endorser(self, obj):
+    def get_endorser(self, obj):
         return obj.confirmed_endorser or obj.get_likely_endorser()
+
+    def show_endorser(self, obj):
+        endorser = self.get_endorser(obj)
+        if endorser:
+            return format_html(
+                u'<h3><a href="{url}">{name}</a></h3><p>{description}'.format(
+                    name=endorser.name,
+                    url=endorser.get_absolute_url(),
+                    description=endorser.description
+                )
+            )
 
 
 @admin.register(ImportedEndorser)
