@@ -134,17 +134,15 @@ class ImportedEndorsement(models.Model):
 
         name = name.lower()
 
-        try:
-            return Endorser.objects.get(name__iexact=name)
-        except Endorser.DoesNotExist:
-            pass
+        query = Endorser.objects.filter(name__iexact=name)
+        if query.exists():
+            return query.first()
 
         # See if putting "The" in front helps.
         if not name.startswith('the '):
-            try:
-                return Endorser.objects.get(name__iexact='the ' + name)
-            except Endorser.DoesNotExist:
-                pass
+            query = Endorser.objects.filter(name__iexact='the ' + name)
+            if query.exists():
+                return query.first()
 
         # See if the last name and part of the first name match.
         if ' ' in name:
@@ -152,13 +150,12 @@ class ImportedEndorsement(models.Model):
             first_name_start = split_name[0][:3]
             last_name = split_name[-1]
             if len(last_name) > 2:
-                try:
-                    return Endorser.objects.get(
-                        name__iendswith=last_name,
-                        name__istartswith=first_name_start,
-                    )
-                except (Endorser.DoesNotExist, MultipleObjectsReturned):
-                    pass
+                query = Endorser.objects.filter(
+                    name__iendswith=last_name,
+                    name__istartswith=first_name_start,
+                )
+                if query.exists():
+                    return query.first()
 
     def __unicode__(self):
         return self.raw_text
