@@ -50,14 +50,14 @@ class ImportedEndorsement(models.Model):
             ref = ref_match.group('ref') or ''
             if ref.startswith('http'):
                 citation_url = ref
-            elif ref.startswith('{{cite '):
+            elif ref.lower().startswith('{{cite '):
                 ref_values = {}
                 for ref_part in ref.strip('}').split('|'):
                     if '=' not in ref_part:
                         continue
 
                     ref_part = ref_part.strip()
-                    key = REF_KEY_REGEX.match(ref_part).group(1)
+                    key = REF_KEY_REGEX.match(ref_part).group(1).lower()
                     value = ref_part[len(key) + 1:].strip()
                     if value:
                         ref_values[key] = value
@@ -76,26 +76,26 @@ class ImportedEndorsement(models.Model):
                 remainder = text.rpartition(full_ref)[0]
             else:
                 remainder = text
-
-            # Remove [[]]-style links, if they exist.
-            if NAMED_LINKS_REGEX.search(remainder):
-                remainder = NAMED_LINKS_REGEX.sub(r'\1', remainder)
-            remainder = remainder.replace('[', '').replace(']', '')
-
-            # Assume that everything before the comma (if present) is the name.
-            comma_parts = remainder.split(',')
-            pre_comma = comma_parts[0]
-            pre_comma = pre_comma.strip("'")
-            endorser_name = pre_comma
-            endorser_details = ','.join(comma_parts[1:]).strip()
-            # Make sure the first letter is capitalised
-            if endorser_details:
-                endorser_details = (
-                    endorser_details[0].upper() + endorser_details[1:]
-                )
         else:
             remainder = text
             ref = None
+
+        # Remove [[]]-style links, if they exist.
+        if NAMED_LINKS_REGEX.search(remainder):
+            remainder = NAMED_LINKS_REGEX.sub(r'\1', remainder)
+        remainder = remainder.replace('[', '').replace(']', '')
+
+        # Assume that everything before the comma (if present) is the name.
+        comma_parts = remainder.split(',')
+        pre_comma = comma_parts[0]
+        pre_comma = pre_comma.strip(" '")
+        endorser_name = pre_comma
+        endorser_details = ','.join(comma_parts[1:]).strip()
+        # Make sure the first letter is capitalised
+        if endorser_details:
+            endorser_details = (
+                endorser_details[0].upper() + endorser_details[1:]
+            )
 
         # Remove [[]] from around the publisher name, if used.
         if citation_name:
@@ -108,6 +108,8 @@ class ImportedEndorsement(models.Model):
                 date_format = '%Y-%m-%d'
             elif SHORT_DATE_FORMAT.match(citation_date):
                 date_format = '%b %d, %Y'
+            elif ',' not in citation_date:
+                date_format = '%d %B %Y'
             else:
                 # Otherwise, assume it's like July 16, 2016.
                 date_format = '%B %d, %Y'

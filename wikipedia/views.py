@@ -15,6 +15,7 @@ from wikipedia.models import BulkImport, ImportedEndorsement
 SLUG_MAPPING = {
     'List_of_Gary_Johnson_presidential_campaign_endorsements,_2016': 'johnson',
     'List_of_Jill_Stein_presidential_campaign_endorsements,_2016': 'stein',
+    'List_of_Evan_McMullin_presidential_campaign_endorsements,_2016': 'mcmullin',
 }
 def progress_index(request):
     slug_counts = collections.defaultdict(collections.Counter)

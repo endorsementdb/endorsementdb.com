@@ -66,6 +66,9 @@ class Command(BaseCommand):
                 else:
                     current_line_sections = list(sections)
                     section_name = line.strip('=')
+                    # In case there's a <ref> tag, get rid of it.
+                    if '<' in section_name:
+                        section_name = section_name.partition('<')[0]
 
                     # Stop when we get to "See also" or "References".
                     if section_name in ('See also', 'References'):
