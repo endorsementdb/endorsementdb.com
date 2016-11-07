@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}
+Wikipedia page import ({{ title }})
+{% endblock %}
+
+{% block breadcrumbs %}
+<a class="section" href="{% url 'index' %}">Home</a>
+<i class="right angle icon divider"></i>
+<a class="section" href="{% url 'progress-index' %}">Import progress</a>
+<i class="right angle icon divider"></i>
+{{ slug }}
+{% endblock %}
+
+{% block content %}
+<h3>
+    <a href="http://en.wikipedia.org/wiki/{{ slug }}">
+        {{ slug }}
+    </a>
+    ({{ imported|length }})
+</h3>
+
+<table class="ui celled padded table">
+    <thead>
+        <tr>
+            <th class="seven wide">Raw Wikipedia text</th>
+            <th class="nine wide">Parsed attributes</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in imported %}
+        <tr>
+            <td style="word-break: break-word">
+                <code>
+                {{ row.raw_text }}
+                </code>
+            </td>
+            <td style="word-break: break-word">
+                <a href="{% url 'admin:wikipedia_importedendorsement_change' row.pk %}"
+                   class="ui mini blue icon button"
+                   style="float: right">
+                    <i class="edit icon"></i>
+                </a>
+                <h3 class="ui header">
+                    Name: {{ row.attributes.endorser_name }}
+                    ({{ row.sections }})
+                    {% if request.user.is_staff %}
+                    {% endif %}
+                </h3>
+                <p>Description: {{ row.attributes.endorser_details }}</p>
+                <p>
+                    Source:
+                        {% if row.attributes.citation_url %}
+                        {{ row.attributes.citation_url|urlize }}
+                        {% else %}
+                        --
+                        {% endif %},
+                    Date: {{ row.attributes.citation_date|default:"--" }},
+                    Publisher: {{ row.attributes.citation_name|default:"--" }}
+                </p>
+                {% if row.confirmed %}
+                    <a class="ui green big label"
+                       href="{{ row.endorser.get_absolute_url }}">
+                        Linked to {{ row.endorser.name }}
+                    </a>
+                    {% if row.endorsements %}
+                    <div class="ui list">
+                        {% for endorsement in row.endorsements %}
+                            <div class="item">
+                                <div class="header">
+                                    Endorsed on {{ endorsement.quote.date }}
+                                </div>
+                                {% if endorsement.notes %}
+                                <div class="description">
+                                    {{ endorsement.notes }}
+                                </div>
+                                {% endif %}
+                                {% if endorsement.quote.source.url != row.attributes.citation_url %}
+                                <div class="description">
+                                    URL: {{ endorsement.quote.source.url|urlize }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                        {% if row.notes %}
+                        <div class="ui error message">
+                            <div class="description">
+                                {{ row.notes }}
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% else %}
+                    <div class="ui error message">
+                        <h3>No endorsements for {{ position.suffix }}</h3>
+                        {% if row.notes %}
+                        <div class="description">
+                            {{ row.notes }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                {% else %}
+                    {% if row.endorser %}
+                    <div class="ui grey big label">
+                        Suggested: {{ row.endorser.name }}
+                    </div>
+                    {% elif row.notes %}
+                    <div class="ui error message">
+                        <h3>Cannot be verified</h3>
+                        <p>{{ row.notes }}</p>
+                    {% endif %}
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

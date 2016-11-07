@@ -11,19 +11,17 @@ Imagine the contents of these Wikipedia pages, stored in a format that allows
 you to filter and sort arbitrarily:
 
 *   [Newspaper endorsements in the United States presidential election, 2016](https://en.wikipedia.org/wiki/Newspaper_endorsements_in_the_United_States_presidential_election,_2016)
-    *   [Daily newspapers](https://en.wikipedia.org/wiki/Newspaper_endorsements_in_the_United_States_presidential_election,_2016#Daily_newspapers) - up to date as of November 3, 11:45PM
-    *   [Weekly newspapers](https://en.wikipedia.org/wiki/Newspaper_endorsements_in_the_United_States_presidential_election,_2016#Weekly_newspapers) - in progress
-    *   [Magazines](https://en.wikipedia.org/wiki/Newspaper_endorsements_in_the_United_States_presidential_election,_2016#Magazines) - up to date as of November 3, 11:45PM
-    *   [College and university newspapers](https://en.wikipedia.org/wiki/Newspaper_endorsements_in_the_United_States_presidential_election,_2016#College_and_university_newspapers) - skipping
-    *   [Endorsements by foreign periodicals](https://en.wikipedia.org/wiki/Newspaper_endorsements_in_the_United_States_presidential_election,_2016#Foreign_newspapers_and_magazines) - in progress
-*   [List of Jill Stein presidential campaign endorsements, 2016](https://en.wikipedia.org/wiki/List_of_Jill_Stein_presidential_campaign_endorsements,_2016) - up to date as of November 3, 11:45PM
-*   [List of Gary Johnson presidential campaign endorsements, 2016](https://en.wikipedia.org/wiki/List_of_Gary_Johnson_presidential_campaign_endorsements,_2016) - in progress
-*   [List of Hillary Clinton presidential campaign endorsements, 2016](https://en.wikipedia.org/wiki/List_of_Hillary_Clinton_presidential_campaign_endorsements,_2016) - in progress
-*   [List of Donald Trump presidential campaign endorsements, 2016](https://en.wikipedia.org/wiki/List_of_Donald_Trump_presidential_campaign_endorsements,_2016) - in progress
+*   [List of Jill Stein presidential campaign endorsements, 2016](https://en.wikipedia.org/wiki/List_of_Jill_Stein_presidential_campaign_endorsements,_2016)
+*   [List of Gary Johnson presidential campaign endorsements, 2016](https://en.wikipedia.org/wiki/List_of_Gary_Johnson_presidential_campaign_endorsements,_2016)
+*   [List of Hillary Clinton presidential campaign endorsements, 2016](https://en.wikipedia.org/wiki/List_of_Hillary_Clinton_presidential_campaign_endorsements,_2016)
+*   [List of Donald Trump presidential campaign endorsements, 2016](https://en.wikipedia.org/wiki/List_of_Donald_Trump_presidential_campaign_endorsements,_2016)
+
+We're still in the process of adding in Clinton and Trump endorsements. You can
+track our progress at <http://endorsementdb.com/progress>
 
 ## Features
 
-* Can browse endorsements from over 700 entities (celebrities, politicians,
+* Can browse endorsements from almost 1000 entities (celebrities, politicians,
   newspapers, etc), including:
   * Who the endorser is, with some tags
   * Number of followers on Twitter (if any)

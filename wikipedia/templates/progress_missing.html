@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}
+Endorsements missing from Wikipedia
+{% endblock %}
+
+{% block breadcrumbs %}
+<a class="section" href="{% url 'index' %}">Home</a>
+<i class="right angle icon divider"></i>
+<a class="section" href="{% url 'progress-index' %}">Import progress</a>
+<i class="right angle icon divider"></i>
+{{ slug }}
+{% endblock %}
+
+{% block content %}
+<h3>
+    <a href="http://en.wikipedia.org/wiki/{{ slug }}">
+        {{ slug }}
+    </a>
+    ({{ endorsements|length }})
+</h3>
+<table class="ui celled padded table">
+    <thead>
+        <tr>
+            <th class="six wide">Endorser</th>
+            <th class="six wide">Quote</th>
+            <th class="four wide">Notes</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for endorsement in endorsements %}
+        <tr>
+            <td>
+                <h3>
+                    <a href="{{ endorsement.endorser.get_absolute_url }}">
+                        {{ endorsement.endorser.name }}
+                    </a>
+                </h3>
+                <p>{{ endorser.endorsement.description }}</p>
+            </td>
+            <td>
+                {% if endorsement.quote.context %}
+                <p><em>[{{ endorsement.quote.context }}]</em></p>
+                {% endif %}
+                {% if endorsement.quote.text %}
+                <p>{{ endorsement.quote.text }}</p>
+                {% endif %}
+            </td>
+            <td style="word-break: break-word">
+                <div class="ui error message">
+                    <p class="description">
+                        {{ endorsement.notes }}
+                    </p>
+                </div>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
+

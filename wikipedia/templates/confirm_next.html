@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}
+Confirm imported endorsements
+{% endblock %}
+
+{% block content %}
+<h2>
+    {{ position }} ::
+    <a href="https://twitter.com/search?f=users&q={{ name }}">
+        <i class="twitter icon"></i>
+    </a>
+    <a href="https://www.google.com/search?q={{ name }} +twitter">
+        <i class="google icon"></i>
+    </a>
+    <a href="https://www.google.com/search?q={{ name }}&tbm=isch">
+        <i class="image icon"></i>
+    </a>
+    <a href="http://en.wikipedia.org/wiki/{{ name.split|join:"_" }}">
+        <i class="wikipedia icon"></i>
+    </a>
+</h2>
+<div class="ui message">
+    <h3>{{ endorsement.sections }}</h3>
+    <code>
+    {{ endorsement.raw_text }}
+    </code>
+</div>
+
+
+<form class="ui form" method="post"
+      action="{% url 'confirm-endorsement' endorsement.pk %}">
+    {% csrf_token %}
+    <div class="ui segment">
+        {% if likely_endorser %}
+        <h4>
+            <a href="{% url 'view-endorser' likely_endorser.pk %}">
+                {{ likely_endorser }}
+            </a>
+        </h4>
+        {% else %}
+        <div class="ui three column grid">
+            <div class="column">
+                <div class="field">
+                    <label>Endorser name</label>
+                    {{ endorser_form.name }}
+                </div>
+                <div class="two fields">
+                    <div class="field">
+                        {{ endorser_form.twitter_username_1 }}
+                    </div>
+                    <div class="field">
+                        {{ endorser_form.twitter_username_2 }}
+                    </div>
+                </div>
+            </div>
+            <div class="column">
+                <div class="field">
+                    <label>Endorser description</label>
+                    {{ endorser_form.description }}
+                </div>
+            </div>
+            <div class="column">
+                <div class="field">
+                    <label>Tags</label>
+                    {{ endorser_form.tags }}
+                </div>
+            </div>
+        </div>
+        <div class="fields">
+            <div class="twelve wide field">
+                <label>Endorser URL</label>
+                {{ endorser_form.url }}
+            </div>
+            <div class="four wide field">
+                <label>Is personal</label>
+                {{ endorser_form.is_personal }}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    <div class="ui divider"></div>
+    <div class="ui segment">
+        <div class="three fields">
+            <div class="field">
+                <label>Date</label>
+                {{ endorsement_form.date }}
+            </div>
+            <div class="field">
+                <label>Source name</label>
+                {{ endorsement_form.source_name }}
+            </div>
+            <div class="field">
+                <label>Event</label>
+                {{ endorsement_form.event }}
+            </div>
+        </div>
+        <div class="field">
+            <label>
+                Source URL
+                {% if source_url %}
+                {{ source_url|urlize }}
+                {% endif %}
+            </label>
+            {{ endorsement_form.source_url }}
+        </div>
+        <div class="field">
+            <label>Context</label>
+            {{ endorsement_form.context }}
+        </div>
+        <div class="field">
+            <label>Quote</label>
+            {{ endorsement_form.quote }}
+        </div>
+    </div>
+    <button class="ui green icon button" type="submit">
+        <i class="check icon"></i>
+        Confirm endorsement
+    </button>
+</form>
+{% endblock %}

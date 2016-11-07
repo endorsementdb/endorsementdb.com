@@ -59,3 +59,30 @@ class EndorsementForm(forms.Form):
         widget=forms.TextInput(attrs={'placeholder': 'e.g., Politico'})
     )
     event = forms.ModelChoiceField(Event.objects.all(), required=False)
+
+
+class EndorsementFormWithoutPosition(EndorsementForm):
+    position = None
+
+
+class EndorserForm(forms.Form):
+    name = forms.CharField(max_length=100)
+    description = forms.CharField(
+        widget=forms.Textarea(attrs={'rows': 4}),
+        required=False,
+    )
+    url = forms.URLField(required=False)
+    twitter_username_1 = forms.CharField(
+        max_length=15,
+        widget=forms.TextInput(attrs={'placeholder': '@username1'}),
+        required=False
+    )
+    twitter_username_2 = forms.CharField(
+        max_length=15,
+        widget=forms.TextInput(attrs={'placeholder': '@username1'}),
+        required=False
+    )
+    tags = forms.ModelMultipleChoiceField(
+        Tag.objects.all(), required=False
+    )
+    is_personal = forms.BooleanField(required=False)

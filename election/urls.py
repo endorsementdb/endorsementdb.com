@@ -18,6 +18,7 @@ from django.conf.urls import include, url
 from django.contrib import admin
 
 import endorsements.views
+import wikipedia.views
 
 
 urlpatterns = [
@@ -38,6 +39,16 @@ urlpatterns = [
         endorsements.views.add_endorsement, name='add-endorsement'),
     url(r'^endorsers/random$',
         endorsements.views.random_endorser, name='random-endorser'),
+    url(r'^progress$',
+        wikipedia.views.progress_index, name='progress-index'),
+    url(r'^progress/(?P<slug>[^/]+)/missing$',
+        wikipedia.views.progress_missing, name='progress-missing'),
+    url(r'^progress/(?P<slug>[^/]+)/(?P<mode>\w+)$',
+        wikipedia.views.progress_list, name='progress-list'),
+    url(r'^confirm$',
+        wikipedia.views.confirm_next, name='confirm-next'),
+    url(r'^confirm/(?P<pk>\d+)',
+        wikipedia.views.confirm_endorsement, name='confirm-endorsement'),
     url(r'^charts$',
         endorsements.views.charts, name='charts'),
 ]

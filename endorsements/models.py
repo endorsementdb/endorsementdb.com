@@ -354,6 +354,7 @@ class Endorsement(models.Model):
     quote = models.ForeignKey(Quote)
     position = models.ForeignKey(Position)
     confirmed = models.BooleanField(default=True)
+    notes = models.TextField(null=True, blank=True)
 
     class Meta:
         ordering = ['-quote']
