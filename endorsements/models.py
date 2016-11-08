@@ -231,7 +231,7 @@ class Candidate(models.Model):
 
 class Source(models.Model):
     date = models.DateField(null=True, blank=True)
-    url = models.URLField(unique=True)
+    url = models.URLField(unique=True, blank=True)
     name = models.CharField(max_length=100, default='')
 
     class Meta:
