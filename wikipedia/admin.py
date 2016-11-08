@@ -36,7 +36,8 @@ def confirm_endorsers(modeladmin, request, queryset):
         endorser = endorsement.get_likely_endorser()
         endorsement.confirmed_endorser = endorser
         endorsement.save()
-        num_confirmed += 1
+        if endorser is not None:
+            num_confirmed += 1
 
     modeladmin.message_user(
         request,
