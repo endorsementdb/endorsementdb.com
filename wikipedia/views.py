@@ -194,7 +194,7 @@ def confirm_endorsement(request, pk):
         )
     except Source.DoesNotExist:
         source = Source.objects.create(
-            date=endorsement_form.cleaned_data['date'],
+            date=endorsement_form.cleaned_data['date'] or None,
             url=endorsement_form.cleaned_data['source_url'],
             name=endorsement_form.cleaned_data['source_name']
         )
@@ -203,7 +203,7 @@ def confirm_endorsement(request, pk):
         context=endorsement_form.cleaned_data['context'],
         text=endorsement_form.cleaned_data['quote'],
         source=source,
-        date=endorsement_form.cleaned_data['date'],
+        date=endorsement_form.cleaned_data['date'] or None,
         event=endorsement_form.cleaned_data['event']
     )
     endorsement = endorser.endorsement_set.create(

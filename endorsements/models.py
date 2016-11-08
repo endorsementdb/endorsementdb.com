@@ -49,6 +49,7 @@ class Endorser(models.Model):
     is_personal = models.BooleanField(default=True)
     max_followers = models.PositiveIntegerField()
     tags = models.ManyToManyField(Tag, blank=True)
+    missing_image = models.BooleanField(default=True)
 
     class Meta:
         ordering = ['-max_followers']
@@ -73,7 +74,8 @@ class Endorser(models.Model):
     get_image.allow_tags = True
 
     def get_image_url(self):
-        return 'https://s3.amazonaws.com/endorsementdb.com/images/endorsers/%d.png' % self.pk
+        image_name = 'missing' if self.missing_image else self.pk
+        return 'https://s3.amazonaws.com/endorsementdb.com/images/endorsers/%s.png' % image_name
 
     def needs_quotes(self):
         current_endorsement = self.get_current_endorsement()
@@ -228,12 +230,16 @@ class Candidate(models.Model):
 
 
 class Source(models.Model):
-    date = models.DateField()
+    date = models.DateField(null=True, blank=True)
     url = models.URLField(unique=True)
     name = models.CharField(max_length=100, default='')
 
     class Meta:
         ordering = ['url', '-date']
+
+    def get_date_display(self):
+        if self.date:
+            return self.date.strftime('%b %d, %Y')
 
     def __unicode__(self):
         return "{url} on {date}".format(
@@ -247,8 +253,12 @@ class Quote(models.Model):
     text = models.TextField(blank=True, null=True)
     source = models.ForeignKey(Source)
     # Defaults to the date of the source, but can be overridden.
-    date = models.DateField()
+    date = models.DateField(null=True, blank=True)
     event = models.ForeignKey(Event, null=True, blank=True)
+
+    def get_date_display(self):
+        if self.date:
+            return self.date.strftime('%b %d, %Y')
 
     def get_source_display(self):
         return '<a href="{url}">{name}</a>'.format(

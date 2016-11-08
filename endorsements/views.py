@@ -171,9 +171,9 @@ def get_endorsers(filter_params, sort_params):
                 'ecx': quote.get_event_context(),
                 'e': event.name if event else '',
                 'ed': event_dates,
-                'da': quote.date.strftime('%b %d, %Y'),
+                'da': quote.get_date_display(),
                 'su': source.url,
-                'sd': source.date.strftime('%b %d, %Y'),
+                'sd': source.get_date_display(),
                 'sn': source.name,
             })
 
@@ -210,7 +210,8 @@ def get_endorsers(filter_params, sort_params):
             't': tags,
             'e': endorsements,
             'a': accounts,
-            'i': is_candidate,
+            'c': is_candidate,
+            'i': 'missing' if endorser.missing_image else endorser.pk,
         })
 
     if not stats['followers']:

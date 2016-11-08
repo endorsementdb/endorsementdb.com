@@ -386,7 +386,7 @@
             </endorsement-accordion-item>
         </div>
         <div v-else>
-            <div v-if="endorser.i">
+            <div v-if="endorser.c">
                 <h3>{{ endorser.n }} is a candidate.</h3>
             </div>
             <div v-else>
@@ -422,7 +422,7 @@
             <div class="ui grid">
                 <div class="four wide column">
                     <img class="ui fluid image"
-                         :src="'https://s3.amazonaws.com/endorsementdb.com/images/endorsers/' + endorser.p + '.png'" />
+                         :src="'https://s3.amazonaws.com/endorsementdb.com/images/endorsers/' + endorser.i + '.png'" />
                     <br />
 
                     <endorser-accounts :accounts="endorser.a">
