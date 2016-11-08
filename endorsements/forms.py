@@ -64,7 +64,7 @@ class EndorsementForm(forms.Form):
 class EndorsementFormWithoutPosition(EndorsementForm):
     position = None
     source_name = forms.CharField(required=False)
-    date = forms.CharField(required=False)
+    date = forms.DateField(widget=Html5DateInput, required=False)
 
 
 class EndorserForm(forms.Form):
