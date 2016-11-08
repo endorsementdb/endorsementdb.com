@@ -58,11 +58,8 @@ def parse_wiki_text(text):
         if ref.lower().startswith('{{cite '):
             ref_values = {}
             for ref_part in ref.strip('}').split('|'):
-                if ref_part.count('=') != 1:
-                    continue
-
                 ref_part = ref_part.strip()
-                key, value = ref_part.split('=')
+                key, _, value = ref_part.partition('=')
                 key = key.lower().strip()
                 value = value.strip()
                 if value:
@@ -96,12 +93,25 @@ def parse_wiki_text(text):
     remainder = remainder.replace('[', '').replace(']', '')
     remainder = BRACES_REGEX.sub('', remainder)
 
-    # Assume that everything before the comma (if present) is the name.
-    comma_parts = remainder.split(',')
-    pre_comma = comma_parts[0]
-    pre_comma = pre_comma.strip(" '")
-    endorser_name = pre_comma
-    endorser_details = ','.join(comma_parts[1:]).strip()
+    # Assume that everything before the comma or open parenthesis (if present)
+    # is the name.
+    split_char = ','
+    if ')' in remainder and '(' in remainder and ',' not in remainder:
+        split_char = '('
+    split_parts = remainder.split(split_char)
+    pre_split = split_parts[0]
+
+    # The Clinton page uses * to denote post-primary endorsements.
+    endorser_name = pre_split.strip(" '*")
+
+    # Some representatives' names are prefaced with "Rep. ".
+    if endorser_name.startswith('Rep. '):
+        endorser_name = endorser_name[5:]
+
+    endorser_details = split_char.join(split_parts[1:]).strip()
+    if split_char == '(':
+        endorser_details = '(' + endorser_details
+
     # Make sure the first letter is capitalised
     if endorser_details:
         endorser_details = (

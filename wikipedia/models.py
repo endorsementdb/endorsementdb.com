@@ -45,8 +45,14 @@ class ImportedEndorsement(models.Model):
         if query.exists():
             return query.first()
 
-        # See if putting "The" in front helps.
-        if not name.startswith('the '):
+        # See if putting "The" in front (or removing it) helps.
+        if name.startswith('the '):
+            query = Endorser.objects.filter(
+                name__iexact=name[4:],
+            )
+            if query.exists():
+                return query.first()
+        else:
             query = Endorser.objects.filter(
                 name__iexact='the ' + name,
             )

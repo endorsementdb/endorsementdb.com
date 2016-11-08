@@ -87,10 +87,18 @@ class Command(BaseCommand):
             if not line.strip():
                 continue
 
-            # On the Trump page, '''{{small|[[Header]]}}''' is used instead of
-            # =====Header=====.
-            if line.startswith("'''{{small|") and line.endswith("}}'''"):
-                line = '=====' + line[11:-5] + '====='
+            # On the Trump and Hillary pages, '''{{small|[[Header]]}}''' is
+            # used instead of =====Header=====.
+            if (
+                    line.startswith("'''{{small|") and
+                    (
+                        line.endswith("}}'''") or
+                        line.endswith('</ref>') or
+                        line.endswith('/>')
+                    )
+            ):
+                section_name = line.partition('|')[2].partition('}')[0]
+                line = '=====' + section_name + '====='
 
             if line.startswith('* ') or line.startswith('=='):
                 # Clear the current line.
@@ -157,6 +165,8 @@ class Command(BaseCommand):
                 if line.startswith('}}') and line != '}}</ref>':
                     continue
                 if line.startswith('<!-'):
+                    continue
+                if line.startswith("''Those who indicated"):
                     continue
 
                 # Add this to the current line.

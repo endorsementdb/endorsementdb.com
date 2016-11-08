@@ -270,3 +270,25 @@ class TestMichaelSavage(__TestParseWikiText):
         'citation_date': date(2015, 7, 10),
         'citation_name': 'WDN',
     }
+
+
+class TestRepErrollDavis(__TestParseWikiText):
+    raw_text = """Rep. [[Erroll Davis]] (1971\u201372)<ref name="LR">Przybyla, H.  [http://www.usatoday.com/story/news/politics/onpolitics/2016/06/23/hillary-clinton-business-leaders-endorsement/86281142/ USA Today] 2016-06-23.</ref>"""
+    expected = {
+        'endorser_name': 'Erroll Davis',
+        'endorser_details': '(1971\u201372)',
+        'citation_url': 'http://www.usatoday.com/story/news/politics/onpolitics/2016/06/23/hillary-clinton-business-leaders-endorsement/86281142/',
+        'citation_date': None,
+        'citation_name': None,
+    }
+
+
+class TestJosephSchmitz(__TestParseWikiText):
+    raw_text="""[[Joseph E. Schmitz]],{{efn|name=a}} [[Office of the Inspector General, U.S. Department of Defense|Inspector General]] (2002–05)<ref name="philiprucker">{{cite web|url=https://www.washingtonpost.com/news/post-politics/wp/2016/03/21/donald-trump-reveals-foreign-policy-team-in-meeting-with-the-washington-post/?postshare=761458589133232&tid=ss_fb|title=Trump questions need for NATO, outlines noninterventionist foreign policy|author=Philip Rucker|date=March 21, 2016|work=Washington Post|accessdate=March 26, 2016}}</ref>"""
+    expected = {
+        'endorser_name': 'Joseph E. Schmitz',
+        'endorser_details': 'Inspector General (2002–05)',
+        'citation_url': 'https://www.washingtonpost.com/news/post-politics/wp/2016/03/21/donald-trump-reveals-foreign-policy-team-in-meeting-with-the-washington-post/?postshare=761458589133232&tid=ss_fb',
+        'citation_date': date(2016, 3, 21),
+        'citation_name': 'Washington Post',
+    }
