@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.http import Http404
 from django.shortcuts import render, redirect
+from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_POST
 
 from endorsements.forms import EndorserForm, EndorsementFormWithoutPosition
@@ -231,6 +232,7 @@ def confirm_endorsement(request, pk):
     return redirect('confirm-next')
 
 
+@never_cache
 @staff_member_required
 def confirm_next(request):
     # Find the next imported endorsement to confirm.
