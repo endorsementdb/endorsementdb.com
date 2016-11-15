@@ -49,7 +49,7 @@ class Endorser(models.Model):
     description = models.TextField(null=True, blank=True)
     url = models.URLField(null=True, blank=True)
     is_personal = models.BooleanField(default=True)
-    max_followers = models.PositiveIntegerField()
+    max_followers = models.PositiveIntegerField(default=0)
     tags = models.ManyToManyField(Tag, blank=True)
     missing_image = models.BooleanField(default=True)
     current_position = models.ForeignKey('Position', blank=True, null=True)
