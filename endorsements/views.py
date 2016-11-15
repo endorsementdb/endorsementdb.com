@@ -129,7 +129,11 @@ def get_endorsers(filter_params, sort_params):
         tags = []
         for tag in endorser.tags.all():
             tags.append((tag.name, tag.pk))
-            stats['tags'][tag.name] += 1
+            tag_name = '{category} - {name}'.format(
+                category=tag.category.name,
+                name=tag.name
+            )
+            stats['tags'][tag_name] += 1
 
         endorsements = []
         previous_position = None
