@@ -132,12 +132,16 @@ class AccountManager(models.Manager):
                         url=url,
                         is_personal=True,
                         max_followers=user['followers_count'],
+                        missing_image=False,
                     )
                 else:
+                    endorser.missing_image = False
+
                     # We may need to update max_followers for the endorser.
                     if user['followers_count'] > endorser.max_followers:
                         endorser.max_followers = user['followers_count']
-                        endorser.save()
+
+                    endorser.save()
 
                 account = self.create(
                     twitter_id=twitter_id,
