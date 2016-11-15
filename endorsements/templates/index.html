@@ -476,22 +476,20 @@
 
         <div class="ui divider"></div>
 
-        <div v-if="endorsers != null">
-            <div v-if="endorsers.length > 0">
-                <endorser-search-stats :stats="stats">
-                </endorser-search-stats>
-                <div class="ui divider"></div>
-            </div>
-
-            <div class="ui two column stackable grid">
-                <endorser-card v-for="(endorser, endorser_index) in endorsers"
-                               v-if="endorser_index < endorsers_shown"
-                               :endorser="endorser">
-                </endorser-card>
-            </div>
+        <div v-if="endorsers.length > 0">
+            <endorser-search-stats :stats="stats">
+            </endorser-search-stats>
+            <div class="ui divider"></div>
         </div>
+
+        <div class="ui two column stackable grid">
+            <endorser-card v-for="(endorser, endorser_index) in endorsers"
+                           :endorser="endorser">
+            </endorser-card>
+        </div>
+
         <div class="ui info message"
-             v-if="endorsers != null && endorsers.length == 0">
+             v-if="endorsers.length == 0 && at_end">
             Could not find any endorsers.
         </div>
     </div>
@@ -837,14 +835,22 @@ new Vue({
             var current_position = $(window).scrollTop() + $(window).height();
             var doc_height_with_buffer = $(document).height() - 100;
 
-            if(current_position >= doc_height_with_buffer) {
-                component.$emit('maybe-load-more-endorsers');
+
+            if(component.loaders == 0) {
+                if(current_position >= doc_height_with_buffer) {
+                    component.$emit('maybe-load-more-endorsers');
+                }
+            } else {
+                setTimeout(function() {
+                    component.$emit('maybe-load-more-endorsers');
+                }, 250);
             }
+
         });
 
         component.$on('maybe-load-more-endorsers', function() {
-            if(component.endorsers && component.endorsers_shown < component.endorsers.length) {
-                component.endorsers_shown += component.page_size;
+            if(!component.at_end) {
+                component.get_endorsers();
             }
         });
     },
@@ -854,23 +860,31 @@ new Vue({
         positions: [],
         extra_positions: [],
         show_extra_positions: false,
-        endorsers: null,
+        endorsers: [],
         page_size: 12,
-        endorsers_shown: 9,
         stats: null,
+        at_end: false,
+        last_form: null,
     },
 
     methods: {
         get_endorsers: function(form) {
             var component = this;
 
-            component.endorsers = null;
-            component.endorsers_shown = component.page_size;
+            if(typeof form == 'undefined') {
+                form = component.last_form;
+            } else {
+                component.last_form = form;
+                component.at_end = false;
+                component.endorsers = [];
+            }
+
             component.stats = null;
 
             component.loaders += 1;
 
-            var endorsersUrl = "/api/endorsements.json";
+            var endorsersUrl = '/api/endorsements.json';
+            endorsersUrl += "?skip=" + component.endorsers.length;
 
             $.ajax({
                 type: 'POST',
@@ -884,7 +898,11 @@ new Vue({
                 component.show_extra_positions = response.show_extra_positions;
 
                 var endorsers = response.endorsers;
-                component.endorsers = endorsers;
+                component.endorsers = component.endorsers.concat(endorsers);
+
+                if(endorsers.length < 12) {
+                    component.at_end = true;
+                }
 
                 var sorted_tags = [];
                 for(var tag_name in response.stats.tags) {

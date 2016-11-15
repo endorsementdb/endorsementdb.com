@@ -8,7 +8,6 @@ from django.core.cache import cache
 from django.db.models import Count
 from django.http import Http404, JsonResponse
 from django.shortcuts import redirect, render, get_object_or_404
-from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
@@ -324,15 +323,22 @@ def get_endorsements(request):
         tags=','.join(sorted(map(str, filter_params.get('tags', [])))),
     )
 
+    try:
+        skip = int(request.GET.get('skip', 0))
+    except ValueError:
+        skip = 0
+
     results = cache.get(params_string)
     if results is None:
         results = get_endorsers(filter_params, sort_params)
         cache.set(params_string, results, 60 * 60)
 
+    # For pagination.
+    results['endorsers'] = results['endorsers'][skip:skip + 12]
+
     return JsonResponse(results)
 
 
-@cache_page(60 * 15)
 def index(request):
     positions = Position.objects.all().annotate(
         num_endorsers=Count('endorsement__endorser')
