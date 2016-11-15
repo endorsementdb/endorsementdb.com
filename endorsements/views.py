@@ -150,8 +150,6 @@ def get_endorsers(filter_params, sort_params):
                 if position != previous_position:
                     stats['positions'][display] += 1
                     stats['count']['endorsements'] += 1
-            previous_position = position
-            position_pks.add(position.pk)
 
             quote = endorsement.quote
             source = quote.source
@@ -181,9 +179,18 @@ def get_endorsers(filter_params, sort_params):
                 'sn': source.name,
             })
 
-        for position_pk in position_pks:
-            position_totals[position_pk] += 1
         position_totals['all'] += 1
+        if endorser.current_position:
+            position = endorser.current_position
+        else:
+            endorsement = endorser.get_current_endorsement()
+            if endorsement:
+                position = endorsement.position
+            else:
+                position = None
+
+        if position:
+            position_totals[position.pk] += 1
 
         accounts = []
         max_followers = 0
@@ -231,7 +238,7 @@ def get_endorsers(filter_params, sort_params):
         }
     ]
     extra_positions = []
-    position_query = Position.objects.annotate(count=Count('endorsement'))
+    position_query = Position.objects.annotate(count=Count('endorser'))
     for position in position_query.order_by('-count'):
         if position.show_on_load:
             to_append_to = positions
