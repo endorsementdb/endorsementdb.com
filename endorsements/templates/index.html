@@ -353,15 +353,17 @@
              :class="{active: expanded}"
              @click="toggle()">
 
-            <i class="dropdown icon"></i>
+            <i class="dropdown icon" v-if="endorsement.su"></i>
             <endorsement-label :endorsement="endorsement">
             </endorsement-label>
-            as of
-            <div class="ui basic label">
-                {{ endorsement.da }}
-            </div>
+            <span v-if="endorsement.da">
+                as of
+                <div class="ui basic label">
+                    {{ endorsement.da }}
+                </div>
+            </span>
         </div>
-        <div class="content"
+        <div class="content" v-if="endorsement.su"
              :class="{active: expanded}">
             <blockquote :cite="endorsement.su">
                 <p v-if="endorsement.e">
