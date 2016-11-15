@@ -370,7 +370,7 @@ class Position(models.Model):
 
 
 class Endorsement(models.Model):
-    endorser = models.ForeignKey(Endorser, null=True, blank=True)
+    endorser = models.ForeignKey(Endorser)
     quote = models.ForeignKey(Quote)
     position = models.ForeignKey(Position)
     confirmed = models.BooleanField(default=True)
