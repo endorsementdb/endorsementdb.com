@@ -21,6 +21,8 @@ class Event(models.Model):
 class Category(models.Model):
     is_exclusive = models.BooleanField(default=False)
     name = models.CharField(max_length=30)
+    allow_personal = models.BooleanField(default=True)
+    allow_org = models.BooleanField(default=True)
 
     def __unicode__(self):
         return self.name

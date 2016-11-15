@@ -155,7 +155,8 @@
 
 <template id="endorser-filter-form-exclusive-tags-template">
     <div class="ui form">
-        <div class="inline fields">
+        <div class="inline fields"
+             v-if="tags.length <= 5">
             <div class="field"
                  @click="toggle_tag(tag)"
                  v-for="tag in tags">
@@ -165,6 +166,19 @@
                     <label>{{ tag.name }}</label>
                 </div>
             </div>
+        </div>
+        <div v-if="tags.length > 5"
+             class="field">
+            <select class="ui search selection dropdown"
+                    @changed="changed($event)">
+                <option value="none" selected="selected">
+                    None
+                </option>
+                <option v-for="tag in tags"
+                        :value="tag.pk">
+                    {{ tag.name }}
+                </option>
+            </select>
         </div>
     </div>
 </template>
@@ -221,11 +235,19 @@
             <div v-if="form.filter.mode == 'organization'">
                 <br />
                 <div class="ui form">
-                    <div class="field">
-                        <label>Tags</label>
-                        <endorser-filter-form-exclusive-tags :tags="options.filter.tags.org"
-                                                   :selected_tags="form.filter.tags">
-                        </endorser-filter-form-exclusive-tags>
+                    <div class="field"
+                         v-for="tag_group in options.filter.tags.org">
+                        <label>{{ tag_group.name }}</label>
+                        <div v-if="tag_group.exclusive">
+                            <endorser-filter-form-exclusive-tags :tags="tag_group.tags"
+                                                                 :selected_tags="form.filter.tags">
+                            </endorser-filter-form-exclusive-tags>
+                        </div>
+                        <div v-if="!tag_group.exclusive">
+                            <endorser-filter-form-tags :tags="tag_group.tags"
+                                                       :selected_tags="form.filter.tags">
+                            </endorser-filter-form-tags>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -632,7 +654,23 @@ Vue.component('endorser-filter-form-exclusive-tags', {
             if(tag_index >= 0) {
                 this.selected_tags.splice(tag_index, 1);
             }
-        }
+        },
+    },
+
+    mounted: function() {
+        var component = this;
+        $(component.$el)
+            .find('.ui.search.selection.dropdown')
+            .dropdown({
+                onChange: function(value, text) {
+                    if(value == "none") {
+                        component.tags.forEach(component.raw_unselect_tag);
+                    } else {
+                        value = parseInt(value, 10);
+                        component.toggle_tag({ name: text, pk: value });
+                    }
+                },
+            });
     },
 
     props: ['selected_tags', 'tags'],

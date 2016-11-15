@@ -261,28 +261,26 @@ def get_endorsers(filter_params, sort_params):
 
 @csrf_exempt
 def get_tags(request):
-    org_tags = []
-    for tag in Tag.objects.filter(is_personal=False):
-        org_tags.append({
-            'name': tag.name,
-            'pk': tag.pk,
-        })
-
     category_tags = collections.defaultdict(list)
-    for tag in Tag.objects.filter(is_personal=True):
+    for tag in Tag.objects.all():
         category_tags[tag.category.pk].append({
             'name': tag.name,
             'pk': tag.pk,
         })
 
+    org_tags = []
     personal_tags = []
     for category_pk in category_tags:
         category = Category.objects.get(pk=category_pk)
-        personal_tags.append({
+        tag = {
             'name': category.name,
             'tags': category_tags[category_pk],
             'exclusive': category.is_exclusive,
-        })
+        }
+        if category.allow_org:
+            org_tags.append(tag)
+        if category.allow_personal:
+            personal_tags.append(tag)
 
     return JsonResponse({
         'org': org_tags,
