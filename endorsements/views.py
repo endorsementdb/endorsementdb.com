@@ -60,7 +60,7 @@ def get_endorsers(filter_params, sort_params):
     if candidate:
         try:
             position = Position.objects.get(slug=candidate)
-            filters['endorsement__position'] = position
+            filters['current_position'] = position
             # If this position is one of the extra positions, make sure those
             # are visible on page load.
             show_extra_positions = not position.show_on_load

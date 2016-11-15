@@ -52,6 +52,7 @@ class Endorser(models.Model):
     max_followers = models.PositiveIntegerField()
     tags = models.ManyToManyField(Tag, blank=True)
     missing_image = models.BooleanField(default=True)
+    current_position = models.ForeignKey('Position', blank=True, null=True)
 
     class Meta:
         ordering = ['-max_followers']
@@ -67,7 +68,10 @@ class Endorser(models.Model):
         return ' / '.join(tag.name for tag in self.tags.all())
 
     def get_current_endorsement(self):
-        return self.endorsement_set.latest('quote')
+        try:
+            return self.endorsement_set.latest('quote')
+        except Endorsement.DoesNotExist:
+            pass
 
     def get_image(self):
         return '<img src="{url}" width="100" />'.format(
