@@ -18,6 +18,7 @@ from endorsements.forms import EndorsementForm, SourceForm, \
 from endorsements.models import Account, Endorser, Candidate, Source, Quote, \
                                 Tag, Endorsement, Category, Position
 from endorsements.templatetags.endorsement_extras import shorten
+from wikipedia.models import ImportedEndorsement
 
 
 def search_endorsers(request):
@@ -377,9 +378,12 @@ def view_endorser(request, pk):
     endorser = get_object_or_404(Endorser, pk=pk)
     endorsement_form = EndorsementForm()
 
+    imported = ImportedEndorsement.objects.filter(confirmed_endorser=endorser)
+
     context = {
         'endorser': endorser,
         'endorsement_form': endorsement_form,
+        'imported': imported,
     }
 
     return render(request, 'view.html', context)

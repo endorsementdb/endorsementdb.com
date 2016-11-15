@@ -30,6 +30,14 @@ View endorser
                 </a>
                 {% endif %}
             </h2>
+            {% for i in imported %}
+            <h3>
+                <a href="{% url 'admin:wikipedia_importedendorsement_change' i.pk %}">Imported</a>
+            </h3>
+            <p>{{ i.raw_text }}</p>
+            <p>{{ i.sections }}</p>
+            {% endfor %}
+
             <p>{{ endorser.description }}</p>
             <p>{{ endorser.max_followers }} followers</p>
             {% if endorser.url %}
