@@ -43,6 +43,16 @@ class Tag(models.Model):
     class Meta:
         ordering = ['name']
 
+    def get_mode(self):
+        allow_personal = self.category.allow_personal
+        allow_org = self.category.allow_org
+        if allow_personal and allow_org:
+            return 'none'
+        elif allow_personal:
+            return 'personal'
+        else:
+            return 'organization'
+
 
 class Endorser(models.Model):
     name = models.CharField(max_length=100)
@@ -233,7 +243,9 @@ class Candidate(models.Model):
     name = models.CharField(max_length=50)
     description = models.TextField()
     color = models.CharField(max_length=6)
+    rgb = models.CharField(max_length=13)
     still_running = models.BooleanField(default=False)
+    positions = models.ManyToManyField('Position')
 
     def __unicode__(self):
         return self.name

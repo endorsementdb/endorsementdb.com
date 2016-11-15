@@ -36,7 +36,7 @@ Wikipedia page import ({{ title }})
                 </code>
             </td>
             <td style="word-break: break-word">
-                <a href="{% url 'admin:wikipedia_importedendorsement_change' row.pk %}"
+                <a href="{% url row.url_name row.pk %}"
                    class="ui mini blue icon button"
                    style="float: right">
                     <i class="edit icon"></i>
@@ -92,7 +92,7 @@ Wikipedia page import ({{ title }})
                         {% endif %}
                     {% else %}
                     <div class="ui error message">
-                        <h3>No endorsements for {{ position.suffix }}</h3>
+                        <h3>No relevant endorsements</h3>
                         {% if row.notes %}
                         <div class="description">
                             {{ row.notes }}

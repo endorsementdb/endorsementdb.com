@@ -9,7 +9,7 @@ from wikipedia.utils import get_ref_definitions, replace_refs, ANY_REF_REGEX, \
 
 
 COMMENTS_REGEX = re.compile(r'<!--.*?-->')
-COLON_SECTION_REGEX = re.compile('([a-zA-Z ]+): ')
+COLON_SECTION_REGEX = re.compile('(\[?\[?[a-zA-Z ]+)\]?\]?: ')
 
 URL = 'https://en.wikipedia.org/w/api.php?action=parse&page={slug}&prop=wikitext&format=json'
 NAMED_LINKS_REGEX = re.compile(r'\[\[[^|\]]+\|([^\]]+)\]\]')
@@ -94,7 +94,8 @@ class Command(BaseCommand):
                     (
                         line.endswith("}}'''") or
                         line.endswith('</ref>') or
-                        line.endswith('/>')
+                        line.endswith('/>') or
+                        line.endswith('}}')
                     )
             ):
                 section_name = line.partition('|')[2].partition('}')[0]
@@ -120,6 +121,8 @@ class Command(BaseCommand):
                     colon_section_match = COLON_SECTION_REGEX.match(line)
                     if colon_section_match:
                         colon_section = colon_section_match.group(1)
+                        colon_section = colon_section.replace('[', '')
+                        colon_section = colon_section.replace(']', '')
                         line_remainder = line.partition(':')[2]
                         for sub_line in split_endorsements(line_remainder):
                             num_imported += self.import_endorsement(
@@ -167,6 +170,10 @@ class Command(BaseCommand):
                 if line.startswith('<!-'):
                     continue
                 if line.startswith("''Those who indicated"):
+                    continue
+                if line.startswith("''Federal, state, and municipal"):
+                    continue
+                if line.startswith("''Note:"):
                     continue
 
                 # Add this to the current line.

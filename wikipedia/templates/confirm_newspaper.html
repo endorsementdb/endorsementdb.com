@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block title %}
-Confirm imported endorsements
+Confirm imported newspaper endorsements
 {% endblock %}
 
 {% block breadcrumbs %}
@@ -9,12 +9,12 @@ Confirm imported endorsements
 <i class="right angle icon divider"></i>
 <a class="section" href="{% url 'progress-index' %}">Import progress</a>
 <i class="right angle icon divider"></i>
-Confirm
+Confirm newspapers
 {% endblock %}
 
 {% block content %}
 <h2>
-    {{ position }} ::
+    {{ newspaper.name }} ::
     <a href="https://twitter.com/search?f=users&q={{ name }}">
         <i class="twitter icon"></i>
     </a>
@@ -28,30 +28,17 @@ Confirm
         <i class="wikipedia icon"></i>
     </a>
     ::
-    <a href="{% url 'admin:wikipedia_importedendorsement_change' endorsement.pk %}">
-        {{ endorsement.pk }}
+    <a href="{% url 'admin:wikipedia_importednewspaper_change' newspaper.pk %}">
+        {{ newspaper.pk }}
     </a>
 </h2>
-<div class="ui message">
-    <h3>{{ endorsement.sections }}</h3>
-    <code>
-    {{ endorsement.raw_text }}
-    </code>
-</div>
 
 
 <form class="ui form" method="post"
-      action="{% url 'confirm-endorsement' endorsement.pk %}">
+      action="{% url 'newspaper-add' newspaper.pk %}">
     {% csrf_token %}
     <div class="ui segment">
-        {% if likely_endorser %}
-        <h4>
-            <a href="{% url 'view-endorser' likely_endorser.pk %}">
-                {{ likely_endorser }}
-            </a>
-        </h4>
-        {% else %}
-        <div class="ui three column grid">
+        <div class="ui two column grid">
             <div class="column">
                 <div class="field">
                     <label>Endorser name</label>
@@ -72,31 +59,21 @@ Confirm
                     {{ endorser_form.description }}
                 </div>
             </div>
-            <div class="column">
-                <div class="field">
-                    <label>Tags</label>
-                    {{ endorser_form.tags }}
-                </div>
-            </div>
         </div>
         <div class="fields">
             <div class="twelve wide field">
                 <label>Endorser URL</label>
                 {{ endorser_form.url }}
             </div>
-            <div class="four wide field">
-                <label>Is personal</label>
-                {{ endorser_form.is_personal }}
-            </div>
         </div>
-        {% endif %}
     </div>
     <div class="ui divider"></div>
     <div class="ui segment">
-        {% if has_endorsement %}
-        <h4>Already has endorsement</h4>
-        {% else %}
-        <div class="three fields">
+        <div class="four fields">
+            <div class="field">
+                <label>Position</label>
+                {{ endorsement_form.position }}
+            </div>
             <div class="field">
                 <label>Date</label>
                 {{ endorsement_form.date }}
@@ -127,7 +104,6 @@ Confirm
             <label>Quote</label>
             {{ endorsement_form.quote }}
         </div>
-        {% endif %}
     </div>
     <button class="ui green icon button" type="submit" autofocus>
         <i class="check icon"></i>

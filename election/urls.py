@@ -49,8 +49,13 @@ urlpatterns = [
         wikipedia.views.confirm_next, name='confirm-next'),
     url(r'^confirm/(?P<pk>\d+)',
         wikipedia.views.confirm_endorsement, name='confirm-endorsement'),
+    url(r'^newspaper$',
+        wikipedia.views.newspaper_next, name='newspaper-next'),
+    url(r'^newspaper/(?P<pk>\d+)',
+        wikipedia.views.newspaper_add, name='newspaper-add'),
     url(r'^charts$',
         endorsements.views.charts, name='charts'),
+    url(r'^results$', wikipedia.views.results, name='results'),
 ]
 
 

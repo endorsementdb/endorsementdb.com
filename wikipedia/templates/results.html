@@ -1,0 +1,456 @@
+{% extends "base.html" %}
+
+{% load humanize %}
+
+{% block breadcrumbs %}
+<a class="section" href="{% url 'index' %}">Home</a>
+<i class="right angle icon divider"></i>
+Results
+{% endblock %}
+
+{% block title %}
+Election results
+{% endblock %}
+
+
+{% block content %}
+<div class="ui form">
+    <div class="six inline fields">
+        <div class="field">
+            <label>Tabulate endorsements by</label>
+        </div>
+        <div class="field">
+            <div class="ui radio checkbox">
+                <input id="endorsement-divisor-state"
+                       name="endorsement_divisor"
+                       value="state"
+                       type="radio" checked="checked" />
+                <label for="endorsement-divisor-state">State</label>
+            </div>
+        </div>
+        <div class="field">
+            <div class="ui radio checkbox">
+                <input id="endorsement-divisor-candidate"
+                       name="endorsement_divisor"
+                       value="candidate" type="radio" />
+                <label for="endorsement-divisor-candidate">Candidate</label>
+            </div>
+        </div>
+        <div class="field">
+            <label>Tabulate votes by</label>
+        </div>
+        <div class="field">
+            <div class="ui radio checkbox">
+                <input id="vote-divisor-state"
+                       name="vote_divisor"
+                       value="state"
+                       type="radio" checked="checked" />
+                <label for="vote-divisor-state">State</label>
+            </div>
+        </div>
+        <div class="field">
+            <div class="ui radio checkbox">
+                <input id="vote-divisor-candidate"
+                       name="vote_divisor"
+                       value="candidate" type="radio" />
+                <label for="vote-divisor-candidate">Candidate</label>
+            </div>
+        </div>
+    </div>
+    <div class="eight inline fields">
+        <div class="field">
+            <label>Color endorsements by</label>
+        </div>
+        <div class="field">
+            <div class="ui radio checkbox">
+                <input id="endorsements" name="endorsement_type" value="endorsements"
+                       type="radio" checked="checked" />
+                <label for="endorsements" >All</label>
+            </div>
+        </div>
+        <div class="field">
+            <div class="ui radio checkbox">
+                <input name="endorsement_type" value="newspapers"
+                       type="radio" id="newspapers" />
+                <label for="newspapers">Newspapers</label>
+            </div>
+        </div>
+        <div class="field">
+            <div class="ui radio checkbox">
+                <input name="endorsement_type" value="politicians"
+                       type="radio" id="politicians" />
+                <label for="politicians">Politicians</label>
+            </div>
+        </div>
+        <div class="field">
+            <div class="ui radio checkbox">
+                <input name="endorsement_type" value="senators"
+                       type="radio" id="senators" />
+                <label for="senators">Senators</label>
+            </div>
+        </div>
+        <div class="field">
+            <div class="ui radio checkbox">
+                <input name="endorsement_type" value="representatives"
+                       type="radio" id="representatives" />
+                <label for="representatives">representatives</label>
+            </div>
+        </div>
+        <div class="field">
+            <div class="ui radio checkbox">
+                <input name="endorsement_type" value="republicans"
+                       type="radio" id="republicans" />
+                <label for="republicans">Republicans</label>
+            </div>
+        </div>
+        <div class="field">
+            <div class="ui radio checkbox">
+                <input name="endorsement_type" value=""
+                       type="radio" id="none" />
+                <label for="none">None</label>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="ui icon message">
+    <i class="help icon"></i>
+    <div class="content">
+        <div class="header">Election results by state</div>
+        <p>
+            The background colour of the state column indicates which candidate
+            won each state. The winning candidate also has a black border
+            around their table cell.
+        </p>
+        <p>
+            You can view the endorsements for any candidate/state by clicking
+            on the link (e.g., "5 endorsements"). Only those who are currently
+            endorsing each candidate are included in the totals (previous
+            endorsements aren't counted).
+        </p>
+    </div>
+</div>
+<table class="ui compact table">
+    <thead>
+        <tr class="first-row">
+            <th style="width: 14%">State</th>
+            {% for candidate in candidates %}
+            <th data-rgb="{{ candidate.rgb }}"
+                class="candidate-cell"
+                style="background: rgb({{ candidate.rgb }}); color: #fff; width: 14%">
+                {{ candidate }}
+            </th>
+            {% endfor %}
+            <th style="background: #767676; color: #fff">Other</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for state in states %}
+        <tr class="state-votes-row">
+            <td class="state-summary"
+                style="background: rgb({{ state.winning_color }}); color: #fff"
+                data-num-votes="{{ state.votes }}"
+            >
+                <div class="ui inverted header">
+                    {{ state.name }}
+                </div>
+            </td>
+            {% for candidate in state.candidates %}
+            <td class="state-votes{% if candidate.won %} candidate-won{% endif %}"
+                style="background: rgba({{ candidate.rgb }}, {{ candidate.ratio }})"
+                data-num-votes="{{ candidate.votes }}"
+            >
+                {% if candidate.votes %}
+                {{ candidate.votes|intcomma }}
+                ({{ candidate.percent|floatformat }}%)
+                {% else %}
+                No votes
+                {% endif %}
+            </td>
+            {% endfor %}
+            <td>
+                {% if state.num_other_positions %}
+                {{ state.num_other_positions }}
+                {% else %}
+                No
+                {% endif %}
+                other endorsements
+            </td>
+        </tr>
+        <tr class="state-endorsements-row" data-state-pk="{{ state.pk }}">
+            <td class="state-summary"
+                {% for key, value, tag in state.counts %}
+                data-num-{{ key }}="{{ value }}"
+                {% endfor %}
+                {% if tag %}
+                data-pk="{{ tag.pk }}"
+                data-mode="{{ tag.get_mode }}"
+                {% endif %}
+            >
+                <div class="ui list">
+                    <div class="item">
+                        {{ state.votes|intcomma }}
+                        votes<a href="#footnote-1">*</a>
+                    </div>
+                    {% for key, value, tag in state.counts %}
+                    <div class="endorsement-count item"
+                         data-count="{{ value }}">
+                        {{ value }} {{ key }}
+                    </div>
+                    {% endfor %}
+                </div>
+            </td>
+            {% for candidate in state.candidates %}
+            <td
+                {% for key, value, tag in candidate.counts %}
+                data-num-{{ key }}="{{ value }}"
+                {% endfor %}
+            >
+                <div class="ui list">
+                    {% for key, value, tag in candidate.counts %}
+                    <div class="endorsement-count item"
+                         data-count="{{ value }}"
+                         {% if tag %}
+                         data-pk="{{ tag.pk }}"
+                         data-mode="{{ tag.get_mode }}"
+                         {% endif %}>
+                            {{ value }} {{ key }}
+                    </div>
+                    {% endfor %}
+                </div>
+            </td>
+            {% endfor %}
+            <td data-count="{{ state.num_other_positions }}">
+                {% if state.other_positions %}
+                <div class="ui list">
+                    {% for position in state.other_positions %}
+                    <div class="endorsement-count item"
+                         data-count="{{ position.count }}"
+                         data-position="{{ position.slug }}">
+                        {{ position.name }}: {{ position.count }}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+        <tr>
+            <td>
+                <div class="ui header">
+                    Totals
+                </div>
+                <p>
+                    Only endorsements relevant to a particular state
+                    are included in this total.
+                </p>
+            </td>
+            {% for candidate, counts, max_counts in candidate_counts %}
+            <td style="background: rgb({{ candidate.rgb }}); color: #fff"
+                class="candidate-totals-row"
+                {% for key, value in max_counts.iteritems %}
+                data-num-{{ key }}="{{ value }}"
+                {% endfor %}
+                >
+                <div class="ui inverted header">
+                    {{ candidate.name }}
+                </div>
+                <div class="ui list">
+                    {% for key, value in counts.iteritems %}
+                    <div class="item">
+                        {{ value|intcomma }} {{ key }}
+                    </div>
+                    {% endfor %}
+                </div>
+            </td>
+            {% endfor %}
+            <td>Other</td>
+        </tr>
+    </tbody>
+</table>
+
+<p id="footnote-1">*This only includes votes for the 5 major candidates.</p>
+{% endblock %}
+
+{% block scripts %}
+{% verbatim %}
+<script type="text/javascript">
+var candidateColors = [];
+$('.candidate-cell').each(function (index, element) {
+    var rgb = element.getAttribute('data-rgb');
+    candidateColors.push(rgb);
+});
+candidateColors.push('118, 118, 118');
+
+
+var candidateSlugs = [];
+$('.candidate-cell').each(function (index, element) {
+    candidateSlugs.push(element.innerText.split(' ')[1].toLowerCase());
+});
+
+var candidateTotals = []
+var statKeys = [
+    'endorsements', 'politicians', 'senators', 'representatives', 'republicans', 'newspapers', 'votes'
+];
+$('.candidate-totals-row').each(function (index, element) {
+    var stats = {};
+    var statKey, statValue;
+    for (var i = 0; i < statKeys.length; i++) {
+        statKey = statKeys[i];
+        statValue = parseInt(element.getAttribute('data-num-' + statKey));
+        stats[statKey] = statValue;
+    }
+    candidateTotals.push(stats);
+});
+
+var endorsementType = 'endorsements';
+var voteDivisor = 'state';
+var endorsementDivisor = 'state';
+var recolorTable = function() {
+    $('.state-votes-row').each(function (index, element) {
+        var stateSummary = element.children[0];
+
+        var totalVotes;
+        if (voteDivisor == 'state') {
+            totalVotes = parseInt(stateSummary.getAttribute('data-num-votes'));
+        }
+
+        var stateCell, candidateVotes, alpha, rgb, cellStyle;
+        for (var i = 1; i < 6; i++) {
+            if (voteDivisor != 'state') {
+                totalVotes = candidateTotals[i-1]['votes'];
+            }
+
+            stateCell = element.children[i];
+
+            candidateVotes = parseInt(stateCell.getAttribute('data-num-votes'));
+            alpha = (candidateVotes / totalVotes).toFixed(2);
+            rgb = candidateColors[i - 1];
+
+            cellStyle = 'background: rgba(' + rgb + ',' + alpha + ')';
+            if (alpha > 0.7) {
+                $(stateCell).find('.ui.list').addClass('inverted');
+                cellStyle += '; color: #fff'
+            } else {
+                $(stateCell).find('.ui.list').removeClass('inverted');
+            }
+            stateCell.style = cellStyle;
+        }
+    });
+
+    $('.state-endorsements-row').each(function (index, element) {
+        var stateSummary = element.children[0];
+
+        var totalCount;
+        if (endorsementDivisor == 'state') {
+            totalCount = parseInt(
+                stateSummary.getAttribute('data-num-' + endorsementType)
+            );
+        }
+
+        var stateCell, candidateCount, alpha, rgb, cellStyle;
+        for (var i = 1; i < 7; i++) {
+            if (endorsementDivisor != 'state') {
+                totalCount = candidateTotals[i-1][endorsementType];
+            }
+
+            stateCell = element.children[i];
+
+            if (endorsementType) {
+                if (endorsementType == 'endorsements' && i == 6) {
+                    // Show the "Other" column only if the type is "all".
+                    candidateCount = parseInt(
+                        stateCell.getAttribute('data-count')
+                    );
+                } else {
+                    candidateCount = parseInt(
+                        stateCell.getAttribute('data-num-' + endorsementType)
+                    );
+                }
+                alpha = (candidateCount / totalCount).toFixed(2);
+                rgb = candidateColors[i - 1];
+                cellStyle = 'background: rgba(' + rgb + ',' + alpha + ')';
+                if (alpha > 0.7) {
+                    $(stateCell).find('.ui.list').addClass('inverted');
+                    cellStyle += '; color: #fff'
+                } else {
+                    $(stateCell).find('.ui.list').removeClass('inverted');
+                }
+            } else {
+                cellStyle = '';
+            }
+
+            stateCell.style = cellStyle;
+        }
+    });
+};
+
+$('input[name="endorsement_type"]').change(function () {
+    endorsementType = $(this).val();
+    recolorTable();
+});
+$('input[name="vote_divisor"]').change(function () {
+    voteDivisor = $(this).val();
+    recolorTable();
+});
+$('input[name="endorsement_divisor"]').change(function () {
+    endorsementDivisor = $(this).val();
+    recolorTable();
+});
+recolorTable();
+
+var addEndorsementLinks = function() {
+    $('.state-endorsements-row').each(function (index, element) {
+        var stateTagPk = element.getAttribute('data-state-pk');
+        $.each(element.children, function(j, td) {
+            var candidateSlug;
+            if (j > 0) {
+                candidateSlug = candidateSlugs[j-1];
+            } else {
+                candidateSlug = 'all';
+            }
+
+            $(td).find('.endorsement-count').each(function(k, item) {
+                if (item.getAttribute('data-count') == '0') {
+                    return;
+                }
+
+                var tags = [stateTagPk];
+
+                var otherTag = item.getAttribute('data-pk');
+                var mode = item.getAttribute('data-mode') || 'none';
+                var positionSlug = item.getAttribute('data-position');
+
+                // Used for the Other column.
+                if (positionSlug) {
+                    candidateSlug = positionSlug;
+                }
+
+                if (otherTag) {
+                    tags.push(otherTag);
+                }
+
+                var encodedForm = btoa(JSON.stringify({
+                    sort: {
+                        by: "followers",
+                        value: "most",
+                    },
+                    filter: {
+                        tags: tags,
+                        mode: mode,
+                        candidate: candidateSlug,
+                    },
+                }));
+                $(item).append(
+                    '<a href="/#form=' +
+                    encodedForm +
+                    '"><i class="external icon"></i></a>'
+                );
+            });
+        });
+    });
+};
+
+addEndorsementLinks();
+</script>
+{% endverbatim %}
+{% endblock %}

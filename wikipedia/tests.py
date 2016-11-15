@@ -30,6 +30,34 @@ class TestSimpleSplitEndorsements(__TestSplitEndorsements):
     ]
 
 
+class TestComplexSplitEndorsements(__TestSplitEndorsements):
+    line = """Rep. B.J. Nikkel (Colorado Co-Chairman and Colorado Women For Trump Coalition Director),<ref>http://www.denverpost.com/2016/08/26/trump-colorado-republican-coalition/</ref> Senator Greg Brophy (Colorado Co-Chairman)<ref>http://www.denverpost.com/2016/08/26/trump-colorado-republican-coalition/</ref>"""
+    expected = [
+        'Rep. B.J. Nikkel (Colorado Co-Chairman and Colorado Women For Trump Coalition Director),<ref>http://www.denverpost.com/2016/08/26/trump-colorado-republican-coalition/</ref>',
+        'Senator Greg Brophy (Colorado Co-Chairman)<ref>http://www.denverpost.com/2016/08/26/trump-colorado-republican-coalition/</ref>',
+    ]
+
+
+class TestMoreComplexSplitEndorsements(__TestSplitEndorsements):
+    line = """Florida Representatives: [[Matt Gaetz]]<ref>{{cite web|url=http://news.wfsu.org/post/nw-fla-republican-matt-gaetz-announces-congressional-bid-endorses-donald-trump|title=NW Fla. Republican Matt Gaetz Announces Congressional Bid, Endorses Donald Trump|author=Lynn Hatter|publisher=|accessdate=March 26, 2016}}</ref> and [[Lake Ray]],<ref name="Tyler O'Neil">{{cite web|url=https://pjmedia.com/faith/2016/05/11/organization-of-pastors-in-politics-endorses-donald-trump/|title=David Lane, Head of Pastors in Politics Org, Presents Argument For Donald Trump|date=May 11, 2016|author=Tyler O'Neil|work=PJ Media}}</ref> [[Gayle Harrell]],<ref name="fltrco"/> [[Debbie Mayfield]],<ref name="fltrco"/> [[MaryLynn Magar]],<ref name="fltrco"/> [[Michelle Rehwinkel Vasilinda]] (Independent)<ref>{{cite web|url=http://www.tallahassee.com/story/news/2016/10/25/rehwinkel-vasilinda-vote-trump/92728464/|title=Rehwinkel Vasilinda: 'Vote for Trump'|work=Tallahassee Democrat|date=October 25, 2016}}</ref>"""
+    expected = [
+        '[[Matt Gaetz]]<ref>{{cite web|url=http://news.wfsu.org/post/nw-fla-republican-matt-gaetz-announces-congressional-bid-endorses-donald-trump|title=NW Fla. Republican Matt Gaetz Announces Congressional Bid, Endorses Donald Trump|author=Lynn Hatter|publisher=|accessdate=March 26, 2016}}</ref>',
+        '[[Lake Ray]],<ref name="Tyler O\'Neil">{{cite web|url=https://pjmedia.com/faith/2016/05/11/organization-of-pastors-in-politics-endorses-donald-trump/|title=David Lane, Head of Pastors in Politics Org, Presents Argument For Donald Trump|date=May 11, 2016|author=Tyler O\'Neil|work=PJ Media}}</ref>', u'[[Gayle Harrell]],<ref name="fltrco"/>',
+        '[[Debbie Mayfield]],<ref name="fltrco"/>',
+        '[[MaryLynn Magar]],<ref name="fltrco"/>',
+        "[[Michelle Rehwinkel Vasilinda]] (Independent)<ref>{{cite web|url=http://www.tallahassee.com/story/news/2016/10/25/rehwinkel-vasilinda-vote-trump/92728464/|title=Rehwinkel Vasilinda: 'Vote for Trump'|work=Tallahassee Democrat|date=October 25, 2016}}</ref>"
+    ]
+
+
+class TestSplitEqualityFederation(__TestSplitEndorsements):
+    line = """[[Equality Federation]]: [[Equality California|CA]],<ref>Johnson, C. [http://www.washingtonblade.com/2015/03/16/equality-california-endorses-hillary-clinton-for-2016/ Washington Blade] 2015-03-16.</ref> [[Equality Pennsylvania|PA]],<ref>Owens, E. [http://www.phillymag.com/g-philly/2016/04/05/equality-pa-hillary-clinton/ Philadelphia] 2016-04-05.</ref> SC,<ref>SC Equality [https://twitter.com/SCEquality/status/696112338706022401?ref_src=twsrc%5Etfw Twitter] 2016-02-06.</ref> [[Fair Wisconsin|WI]]<ref>[http://wisconsingazette.com/2016/03/30/states-largest-lgbt-group-endorses-clinton/ Wisconsin Gazette] 2016-03-30.</ref>"""
+    expected = [
+        '[[Equality California|CA]],<ref>Johnson, C. [http://www.washingtonblade.com/2015/03/16/equality-california-endorses-hillary-clinton-for-2016/ Washington Blade] 2015-03-16.</ref>',
+        '[[Equality Pennsylvania|PA]],<ref>Owens, E. [http://www.phillymag.com/g-philly/2016/04/05/equality-pa-hillary-clinton/ Philadelphia] 2016-04-05.</ref>',
+        'SC,<ref>SC Equality [https://twitter.com/SCEquality/status/696112338706022401?ref_src=twsrc%5Etfw Twitter] 2016-02-06.</ref>', u'[[Fair Wisconsin|WI]]<ref>[http://wisconsingazette.com/2016/03/30/states-largest-lgbt-group-endorses-clinton/ Wisconsin Gazette] 2016-03-30.</ref>'
+    ]
+
+
 class __TestReplaceRefs(unittest.TestCase):
     def runTest(self):
         actual = replace_refs(self.line, self.definitions)
@@ -212,7 +240,7 @@ class TestWilliamFBOReilly(__TestParseWikiText):
         'endorser_name': "William F. B. O'Reilly",
         'endorser_details': 'The publisher of the conservative newsblog the "Blackberry Alarm Clock".',
         'citation_url': 'http://www.newsday.com/opinion/columnists/and-the-write-in-presidential-candidates-are-1.12561703',
-        'citation_name': None,
+        'citation_name': 'Newsday',
         'citation_date': None,
     }
 
@@ -234,8 +262,8 @@ class TestDiamondAndSilk(__TestParseWikiText):
         'endorser_name': 'Diamond and Silk',
         'endorser_details': '',
         'citation_url': 'https://www.youtube.com/watch?v=-piJWc_6Lqc',
-        'citation_date': None,
-        'citation_name': None,
+        'citation_name': 'Former Democrats Stump For Trump. Fox Business, Varney and Co.',
+        'citation_date': date(2016, 1, 8),
     }
 
 
@@ -278,8 +306,8 @@ class TestRepErrollDavis(__TestParseWikiText):
         'endorser_name': 'Erroll Davis',
         'endorser_details': '(1971\u201372)',
         'citation_url': 'http://www.usatoday.com/story/news/politics/onpolitics/2016/06/23/hillary-clinton-business-leaders-endorsement/86281142/',
-        'citation_date': None,
-        'citation_name': None,
+        'citation_date': date(2016, 6, 23),
+        'citation_name': 'USA Today',
     }
 
 
@@ -291,4 +319,15 @@ class TestJosephSchmitz(__TestParseWikiText):
         'citation_url': 'https://www.washingtonpost.com/news/post-politics/wp/2016/03/21/donald-trump-reveals-foreign-policy-team-in-meeting-with-the-washington-post/?postshare=761458589133232&tid=ss_fb',
         'citation_date': date(2016, 3, 21),
         'citation_name': 'Washington Post',
+    }
+
+
+class TestTeamLoveRecords(__TestParseWikiText):
+    raw_text = """[[Team Love Records]]*<ref>Team Love Records. [https://twitter.com/teamloverecords/status/770625825985167360 Twitter] 2016-08-30.</ref>"""
+    expected = {
+        'endorser_name': 'Team Love Records',
+        'endorser_details': '',
+        'citation_url': 'https://twitter.com/teamloverecords/status/770625825985167360',
+        'citation_name': 'Twitter',
+        'citation_date': date(2016, 8, 30),
     }

@@ -29,14 +29,14 @@ def replace_refs(line, definitions):
 
 SPLIT_REGEX = re.compile(
     '('
-    r'(\[\[[^\]]{5,}\]\]|[A-Za-z .])'
+    r'(\[\[[^\]]{5,}\]\]( \([^\)]+\))?|[A-Za-z .\-\(\)]+)'
     r'(, ?| and |)'
     r'(<ref name="[^"]+" ?/>|<ref[^<]+?</ref>)'
     ')'
 )
 def split_endorsements(line):
     for match in SPLIT_REGEX.finditer(line):
-        yield match.group(0)
+        yield match.group(0).strip()
 
 
 BRACES_REGEX = re.compile(r'{{[^}]+}}')
@@ -77,11 +77,31 @@ def parse_wiki_text(text):
         elif ref.startswith('http') and not citation_url:
             citation_url = ref
         elif '[http' in ref and ']' in ref and not citation_url:
-            # Strip away anything before or after the p[.
+            # Strip away anything before or after the [].
             ref_remainder = ref[ref.index('[')+1:ref.index(']')]
 
+            # Check if what's after the ] is a date.
+            possible_date = ref[ref.index(']') + 1:].strip(' .')
+            if '.' not in possible_date:
+                if (
+                    (
+                        len(possible_date) == 10 and
+                        possible_date.startswith('201')
+                    ) or
+                    possible_date.endswith(' 2016') or
+                    possible_date.endswith(' 2015')
+                ):
+                    citation_date = possible_date
+
             # The first space splits up the URL and the rest of the ref.
-            citation_url = ref_remainder.partition(' ')[0]
+            citation_url, _, possible_name = ref_remainder.partition(' ')
+
+            # Only use the name as-is if there's no date (otherwise, we'll have
+            # to split it up).
+            if citation_date:
+                citation_name = possible_name
+            elif ',' in possible_name:
+                citation_name = possible_name.partition(',')[0]
         else:
             continue
 
@@ -104,11 +124,16 @@ def parse_wiki_text(text):
     # The Clinton page uses * to denote post-primary endorsements.
     endorser_name = pre_split.strip(" '*")
 
-    # Some representatives' names are prefaced with "Rep. ".
-    if endorser_name.startswith('Rep. '):
+    # Some representatives' names are prefaced with Rep., Sen., Ass., Del.
+    if (
+            endorser_name.startswith('Rep. ') or
+            endorser_name.startswith('Sen. ') or
+            endorser_name.startswith('Ass. ') or
+            endorser_name.startswith('Del. ')
+    ):
         endorser_name = endorser_name[5:]
 
-    endorser_details = split_char.join(split_parts[1:]).strip()
+    endorser_details = split_char.join(split_parts[1:]).strip(' *')
     if split_char == '(':
         endorser_details = '(' + endorser_details
 

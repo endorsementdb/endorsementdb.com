@@ -1,5 +1,6 @@
 from django import forms
 from django.contrib import admin, messages
+from django.utils.html import format_html
 
 from endorsements.models import Account, Candidate, Endorsement, Endorser, \
                                 Source, Quote, Comment, Position, Tag, \
@@ -16,7 +17,14 @@ class AccountAdmin(admin.ModelAdmin):
 
 @admin.register(Candidate)
 class CandidateAdmin(admin.ModelAdmin):
-    list_display = ('name', 'color', 'still_running')
+    list_display = ('name', 'color', 'show_rgb', 'still_running')
+
+    def show_rgb(self, obj):
+        return format_html(
+            u'<div style="background: rgb({rgb}); color: #fff">{rgb}</div>'.format(
+                rgb=obj.rgb
+            )
+        )
 
 
 class EndorsementInline(admin.TabularInline):
@@ -37,12 +45,6 @@ class EndorserAdminForm(forms.ModelForm):
     class Meta:
         model = Endorser
         fields = '__all__'
-
-    def __init__(self, *args, **kwargs):
-        super(EndorserAdminForm, self).__init__(*args, **kwargs)
-        self.fields['tags'].queryset = Tag.objects.filter(
-            is_personal=self.instance.is_personal
-        )
 
 
 def add_tag(modeladmin, request, queryset):
@@ -120,7 +122,7 @@ class EndorserAdmin(admin.ModelAdmin):
     list_filter = ('tags', 'is_personal', ExcludedTagsFilter,
                     ExcludedCategoriesFilter)
     list_display = ('name', 'get_image', 'max_followers', 'get_tags',
-                    'has_url', 'needs_quotes', 'is_personal')
+                    'current_position', 'is_personal')
     inlines = [
         EndorsementInline,
         CommentInline
@@ -195,7 +197,7 @@ class TagAdmin(admin.ModelAdmin):
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('name', 'is_exclusive')
+    list_display = ('name', 'is_exclusive', 'allow_personal', 'allow_org')
 
 
 @admin.register(Event)

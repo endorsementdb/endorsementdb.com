@@ -41,7 +41,7 @@ class TagFilterForm(forms.Form):
 class EndorsementForm(forms.Form):
     position = forms.ModelChoiceField(Position.objects.all())
     quote = forms.CharField(
-        widget=forms.Textarea(attrs={'rows': 2}),
+        widget=forms.Textarea(attrs={'rows': 1}),
         required=False,
     )
     context = forms.CharField(
@@ -65,6 +65,7 @@ class EndorsementFormWithoutPosition(EndorsementForm):
     position = None
     source_name = forms.CharField(required=False)
     date = forms.DateField(widget=Html5DateInput, required=False)
+    source_url = forms.URLField(required=False)
 
 
 class EndorserForm(forms.Form):
