@@ -245,7 +245,7 @@ class Candidate(models.Model):
     color = models.CharField(max_length=6)
     rgb = models.CharField(max_length=13)
     still_running = models.BooleanField(default=False)
-    positions = models.ManyToManyField('Position')
+    position = models.OneToOneField('Position', blank=True, null=True)
 
     def __unicode__(self):
         return self.name

@@ -546,16 +546,13 @@ def results(request):
     candidates = list(
         Candidate.objects.filter(still_running=True).order_by('pk')
     )
+    positions = [
+        candidate.position.pk for candidate in candidates
+    ]
 
     cache_key = 'state_results'
     cached_values = cache.get(cache_key)
     if cached_values is None:
-        position_slugs = {}
-        for candidate in candidates:
-            position_slugs[candidate.pk] = (
-                candidate.name.split(' ')[-1].lower()
-            )
-
         candidate_counts = collections.defaultdict(collections.Counter)
         states = []
 
@@ -582,7 +579,7 @@ def results(request):
             candidate_values = []
             for candidate in candidates:
                 endorsements = Endorser.objects.filter(
-                    current_position__slug=position_slugs[candidate.pk],
+                    current_position=candidate.position,
                     tags=state_tag,
                 ).distinct()
                 num_endorsements = endorsements.count()
@@ -648,7 +645,7 @@ def results(request):
             other_endorsements = Endorser.objects.filter(
                 tags=state_tag,
             ).exclude(
-                current_position__slug__in=position_slugs.values(),
+                current_position__pk__in=positions,
             ).prefetch_related('current_position')
             position_counter = collections.Counter()
             for endorser in other_endorsements:
@@ -657,7 +654,7 @@ def results(request):
                     position_counter[position.pk] += 1
 
             other_positions = []
-            for position in Position.objects.exclude(slug__in=position_slugs.values()):
+            for position in Position.objects.exclude(pk__in=positions):
                 count = position_counter[position.pk]
                 if count > 0:
                     other_positions.append({
