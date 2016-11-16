@@ -349,6 +349,8 @@ var recolorTable = function() {
         }
 
         var stateCell, candidateCount, alpha, rgb, cellStyle;
+        var maxCount = 0;
+        var candidateCounts = [];
         for (var i = 1; i < 7; i++) {
             if (endorsementDivisor != 'state') {
                 totalCount = candidateTotals[i-1][endorsementType];
@@ -357,16 +359,23 @@ var recolorTable = function() {
             stateCell = element.children[i];
 
             if (endorsementType) {
-                if (endorsementType == 'endorsements' && i == 6) {
-                    // Show the "Other" column only if the type is "all".
-                    candidateCount = parseInt(
-                        stateCell.getAttribute('data-count')
-                    );
+                if (i == 6) {
+                    if (endorsementType == 'endorsements') {
+                        // Show the "Other" column only if the type is "all".
+                        candidateCount = parseInt(
+                            stateCell.getAttribute('data-count')
+                        );
+                    } else {
+                        candidateCount = 0;
+                    }
                 } else {
                     candidateCount = parseInt(
                         stateCell.getAttribute('data-num-' + endorsementType)
                     );
+                    maxCount = Math.max(maxCount, candidateCount);
+                    candidateCounts.push(candidateCount);
                 }
+
                 alpha = (candidateCount / totalCount).toFixed(2);
                 rgb = candidateColors[i - 1];
                 cellStyle = 'background: rgba(' + rgb + ',' + alpha + ')';
@@ -381,6 +390,15 @@ var recolorTable = function() {
             }
 
             stateCell.style = cellStyle;
+            stateCell.className = '';
+        }
+
+        // Add a black border to the cell with the most endorsements.
+        for (var i = 1; i < 6; i++) {
+            stateCell = element.children[i];
+            if (candidateCounts[i - 1] == maxCount && maxCount > 0) {
+                $(stateCell).addClass('candidate-won');
+            }
         }
     });
 };
