@@ -8,6 +8,7 @@ from django.core.cache import cache
 from django.db.models import Count
 from django.http import Http404, JsonResponse
 from django.shortcuts import redirect, render, get_object_or_404
+from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
@@ -349,7 +350,7 @@ def get_endorsements(request):
     return JsonResponse(results)
 
 
-def index(request):
+def browse(request):
     positions = Position.objects.all().annotate(
         num_endorsers=Count('endorsement__endorser')
     )
@@ -362,7 +363,7 @@ def index(request):
     context = {
         'counts': counts,
     }
-    return render(request, 'index.html', context)
+    return render(request, 'browse.html', context)
 
 
 @require_POST
@@ -383,6 +384,7 @@ def add_endorser(request):
     return redirect('view-endorser', pk=account.endorser.pk)
 
 
+@never_cache
 def view_endorser(request, pk):
     endorser = get_object_or_404(Endorser, pk=pk)
     endorsement_form = EndorsementForm()
@@ -493,7 +495,7 @@ CATEGORY_NAMES = {
     'Race/ethnicity': True,
     'Organizations': False,
 }
-def tags_index(request):
+def stats_tags(request):
     candidates = list(
         Candidate.objects.filter(still_running=True).order_by('pk')
     )

@@ -7,20 +7,23 @@ Tagging progress
 {% endblock %}
 
 {% block breadcrumbs %}
-<a class="section" href="{% url 'index' %}">Home</a>
+<span class="section">Progress</a>
 <i class="right angle icon divider"></i>
-<a class="section" href="{% url 'tags-index' %}">Tags</a>
-<i class="right angle icon divider"></i>
-Progress
+Tagging endorsers
 {% endblock %}
 
 {% block content %}
 {% for page in sections_by_page %}
-<h3>{{ page.slug }} ({{ page.sections|length }})</h3>
+<h3>
+    <a href="http://en.wikipedia.org/wiki/{{ page.slug }}">
+        {{ page.slug }}
+    </a>
+    ({{ page.sections|length }} sections)
+</h3>
 <table class="ui celled padded table">
     <thead>
         <tr>
-            <th style="width: 40%">Sections</th>
+            <th style="width: 40%">Section</th>
             <th>Total</th>
             <th>Imported</th>
             <th>Needs tags</th>
@@ -30,7 +33,7 @@ Progress
             <th>Needs occupation</th>
             <th>Needs location</th>
             <th>Needs party</th>
-            <th>Common tags</th>
+            <th class="single line">Common tags</th>
         </tr>
     </thead>
     <tbody>

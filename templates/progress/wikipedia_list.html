@@ -1,15 +1,17 @@
 {% extends "base.html" %}
 
 {% block title %}
-Wikipedia page import ({{ title }})
+{{ title }} from Wikipedia
 {% endblock %}
 
 {% block breadcrumbs %}
-<a class="section" href="{% url 'index' %}">Home</a>
+<span class="section">Progress</a>
 <i class="right angle icon divider"></i>
-<a class="section" href="{% url 'progress-index' %}">Import progress</a>
+<a class="section" href="{% url 'progress-wikipedia' %}">
+    Endorsements from Wikipedia
+</a>
 <i class="right angle icon divider"></i>
-{{ slug }}
+{{ title }}
 {% endblock %}
 
 {% block content %}
@@ -20,6 +22,7 @@ Wikipedia page import ({{ title }})
     ({{ imported|length }})
 </h3>
 
+{% if endorsements %}
 <table class="ui celled padded table">
     <thead>
         <tr>
@@ -116,4 +119,9 @@ Wikipedia page import ({{ title }})
         {% endfor %}
     </tbody>
 </table>
+{% else %}
+<div class="ui message">
+    <h4>No endorsements</h4>
+</div>
+{% endif %}
 {% endblock %}

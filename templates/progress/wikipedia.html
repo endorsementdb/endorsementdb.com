@@ -3,19 +3,19 @@
 {% load humanize %}
 
 {% block title %}
-Wikipedia page progress
+Wikipedia import progress
 {% endblock %}
 
 {% block breadcrumbs %}
-<a class="section" href="{% url 'index' %}">Home</a>
+<span class="section">Progress</a>
 <i class="right angle icon divider"></i>
-Progress
+Endorsements from Wikipedia
 {% endblock %}
 
 
 {% block content %}
 {% if request.user.is_staff %}
-<a href="{% url 'confirm-next' %}" class="ui blue button">
+<a href="{% url 'confirm-endorsements' %}" class="ui blue button">
     Confirm endorsements
 </a>
 {% endif %}
@@ -71,28 +71,32 @@ Progress
             </td>
             <td>
                 {{ position.num_confirmed }}
-                <a href="{% url 'progress-list' slug=position.slug mode='already' %}"
+                <br />
+                <a href="{% url 'progress-wikipedia-list' slug=position.slug mode='already' %}"
                    class="ui mini blue icon button">
                     <i class="list icon"></i>
                 </a>
             </td>
             <td>
                 {{ position.num_unconfirmed }}
-                <a href="{% url 'progress-list' slug=position.slug mode='notyet' %}"
+                <br />
+                <a href="{% url 'progress-wikipedia-list' slug=position.slug mode='notyet' %}"
                    class="ui mini blue icon button">
                     <i class="list icon"></i>
                 </a>
             </td>
             <td>
                 {{ position.num_unverifiable }}
-                <a href="{% url 'progress-list' slug=position.slug mode='notyet' %}"
+                <br />
+                <a href="{% url 'progress-wikipedia-list' slug=position.slug mode='notyet' %}"
                    class="ui mini blue icon button">
                     <i class="list icon"></i>
                 </a>
             </td>
             <td>
                 {{ position.num_missing }}
-                <a href="{% url 'progress-list' slug=position.slug mode='missing' %}"
+                <br />
+                <a href="{% url 'progress-wikipedia-list' slug=position.slug mode='missing' %}"
                    class="ui mini blue icon button">
                     <i class="list icon"></i>
                 </a>

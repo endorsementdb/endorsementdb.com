@@ -1,0 +1,23 @@
+{% load humanize %}
+{% load endorsement_extras %}
+
+{% if accounts %}
+<div class="ui list">
+{% for account in accounts %}
+    <div class="item">
+        <i class="large middle aligned twitter icon"></i>
+        <div class="content">
+            <a href="{{ account.get_absolute_url }}" class="header"> 
+                @{{ account.screen_name }}
+            </a>
+            <div title="{{ account.followers_count|intcomma }}as of date"
+                  class="description">
+                {{ account.followers_count|shorten }} followers
+            </div>
+        </div>
+    </div>
+{% endfor %}
+</div>
+{% else %}
+<h3>No Twitter accounts found</h3>
+{% endif %}
