@@ -22,7 +22,7 @@ class Command(BaseCommand):
         print "Adding tags for ", endorser.name
         print "Currently has", [t.name for t in endorser.tags.all()]
         for tag_name in options['tags']:
-            tag = Tag.objects.get(name=tag_name)
+            tag = Tag.objects.get(name__iexact=tag_name)
             if options['remove']:
                 endorser.tags.remove(tag)
                 print "REMOVING ------",
