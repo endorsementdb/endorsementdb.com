@@ -181,10 +181,6 @@ Election results
                 {% for key, value, tag in state.counts %}
                 data-num-{{ key }}="{{ value }}"
                 {% endfor %}
-                {% if tag %}
-                data-pk="{{ tag.pk }}"
-                data-mode="{{ tag.get_mode }}"
-                {% endif %}
             >
                 <div class="ui list">
                     <div class="item">
@@ -193,7 +189,12 @@ Election results
                     </div>
                     {% for key, value, tag in state.counts %}
                     <div class="endorsement-count item"
-                         data-count="{{ value }}">
+                         data-count="{{ value }}"
+                         {% if tag %}
+                         data-pk="{{ tag.pk }}"
+                         data-mode="{{ tag.get_mode }}"
+                         {% endif %}
+                    >
                         {{ value }} {{ key }}
                     </div>
                     {% endfor %}
