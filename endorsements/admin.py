@@ -17,7 +17,7 @@ class AccountAdmin(admin.ModelAdmin):
 
 @admin.register(Candidate)
 class CandidateAdmin(admin.ModelAdmin):
-    list_display = ('name', 'color', 'show_rgb', 'still_running')
+    list_display = ('name', 'position', 'color', 'show_rgb', 'still_running')
 
     def show_rgb(self, obj):
         return format_html(
