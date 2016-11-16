@@ -25,6 +25,53 @@ class ImportedResult(models.Model):
         unique_together = ('tag', 'candidate')
 
 
+class ImportedRepresentative(models.Model):
+    bulk_import = models.ForeignKey(BulkImport)
+    state = models.ForeignKey(
+        Tag,
+        limit_choices_to={
+            'category': 8,
+        },
+        related_name='+',
+    )
+    confirmed_endorser = models.ForeignKey(Endorser, blank=True, null=True)
+    party = models.ForeignKey(
+        Tag,
+        limit_choices_to={
+            'category': 2
+        },
+        related_name='+',
+    )
+    name = models.CharField(max_length=50)
+
+    def get_likely_endorser(self):
+        name = self.name.lower()
+
+        query = Endorser.objects.filter(
+            name__iexact=name,
+        )
+        if query.exists():
+            return query.first()
+
+        if ' ' in name:
+            split_name = name.split(' ')
+            first_name_start = split_name[0][:3]
+            last_name = split_name[-1]
+            if len(last_name) > 3:
+                query = Endorser.objects.filter(
+                    name__iendswith=last_name,
+                    name__istartswith=first_name_start,
+                )
+                if query.exists():
+                    return query.first()
+
+        query = Endorser.objects.filter(
+            name__icontains=name,
+        )
+        if query.exists():
+            return query.first()
+
+
 # TODO: Delete
 class ImportedEndorser(models.Model):
     slug = models.SlugField()

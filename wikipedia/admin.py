@@ -6,7 +6,7 @@ from django.utils.html import format_html
 from endorsements.models import Category, Tag
 from wikipedia.models import BulkImport, ImportedEndorsement, \
                              ImportedEndorser, ImportedNewspaper, \
-                             ImportedResult
+                             ImportedResult, ImportedRepresentative
 
 
 @admin.register(BulkImport)
@@ -71,6 +71,43 @@ def make_personal(modeladmin, request, queryset):
         if endorser:
             endorser.is_personal = True
             endorser.save()
+
+
+def make_org(modeladmin, request, queryset):
+    for instance in queryset:
+        endorser = instance.confirmed_endorser
+        if endorser:
+            endorser.is_personal = False
+            endorser.save()
+
+
+def remove_tag(modeladmin, request, queryset):
+    tag_pk = request.POST['tag']
+    try:
+        tag = Tag.objects.get(pk=tag_pk)
+    except Tag.DoesNotExist:
+        modeladmin.message_user(
+            request,
+            "Could not find tag with pk {tag_pk}".format(
+                tag_pk=tag_pk
+            ),
+            messages.ERROR,
+        )
+        return
+
+    for instance in queryset:
+        endorser = instance.confirmed_endorser
+        if endorser:
+            endorser.tags.remove(tag)
+
+    modeladmin.message_user(
+        request,
+        "Removed tag {tag} for {n} endorsers".format(
+            tag=tag.name,
+            n=queryset.count(),
+        ),
+        messages.SUCCESS,
+    )
 
 
 def add_tag(modeladmin, request, queryset):
@@ -218,5 +255,65 @@ class ImportedNewspaperAdmin(admin.ModelAdmin):
                     name=endorser.name,
                     url=endorser.get_absolute_url(),
                     description=endorser.description
+                )
+            )
+
+
+class HasEndorsementsFilter(admin.SimpleListFilter):
+    title = 'Has endorsements'
+    parameter_name = 'has_endorsements'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('yes', 'Yes'),
+            ('no',  'No'),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == 'yes':
+            return queryset.filter(confirmed_endorser__current_position__isnull=False)
+        if self.value() == 'no':
+            return queryset.filter(confirmed_endorser__current_position=None)
+
+
+@admin.register(ImportedRepresentative)
+class ImportedRepresentativeAdmin(admin.ModelAdmin):
+    list_display = ('get_display', 'get_image', 'show_endorser', 'is_confirmed')
+    list_filter = [HasEndorsementsFilter, 'party', 'state']
+    action_form = EndorserActionForm
+    actions = [add_tag, remove_tag, confirm_endorsers, make_personal, make_org]
+
+    def is_confirmed(self, obj):
+        return obj.confirmed_endorser is not None
+    is_confirmed.boolean = True
+
+    def get_display(self, obj):
+        return format_html(
+            u'<h3>{name}</h3><p>{party} - {state}'.format(
+                name=obj.name,
+                party=obj.party,
+                state=obj.state
+            )
+        )
+
+    def get_image(self, obj):
+        endorser = obj.confirmed_endorser or obj.get_likely_endorser()
+        if endorser:
+            return endorser.get_image()
+    get_image.allow_tags = True
+
+    def show_endorser(self, obj):
+        endorser = obj.confirmed_endorser or obj.get_likely_endorser()
+        if endorser:
+            return format_html(
+                u'<h3><a href="{url}">{name}</a> ({pk})</h3>'
+                u'<p>{description} - {type}</p>'
+                u'<p>{tags}</p>'.format(
+                    url=endorser.get_absolute_url(),
+                    name=endorser.name,
+                    pk=endorser.pk,
+                    description=endorser.description,
+                    type='personal' if endorser.is_personal else 'org',
+                    tags=' / '.join(tag.name for tag in endorser.tags.all()),
                 )
             )
