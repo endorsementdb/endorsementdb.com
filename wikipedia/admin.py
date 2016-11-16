@@ -32,18 +32,62 @@ class ConfirmedEndorserFilter(admin.SimpleListFilter):
             return queryset.filter(confirmed_endorser__isnull=True)
 
 
-class HasTagsFilter(admin.SimpleListFilter):
-    title = 'Endorser has tags'
-    parameter_name = 'has_tags'
+class NeedsFilter(admin.SimpleListFilter):
+    title = 'needs'
+    parameter_name = 'needs'
 
     def lookups(self, request, model_admin):
         return (
-            ('no',  'No'),
+            ('tags',  'Tags'),
+            ('org_type',  'Org type'),
+            ('gender',  'Gender'),
+            ('race',  'Race'),
+            ('occupation',  'Occupation'),
+            ('location',  'Location'),
+            ('party',  'Party'),
         )
 
     def queryset(self, request, queryset):
-        if self.value() == 'no':
+        value = self.value()
+        queryset = queryset.filter(confirmed_endorser__isnull=False)
+        if value == 'tags':
             return queryset.filter(confirmed_endorser__tags=None)
+        elif value == 'org_type':
+            return queryset.filter(
+                confirmed_endorser__is_personal=False
+            ).exclude(
+                confirmed_endorser__tags__category=7
+            )
+        elif value == 'gender':
+            return queryset.filter(
+                confirmed_endorser__is_personal=True
+            ).exclude(
+                confirmed_endorser__tags__category=1
+            )
+        elif value == 'race':
+            return queryset.filter(
+                confirmed_endorser__is_personal=True
+            ).exclude(
+                confirmed_endorser__tags__category=4
+            )
+        elif value == 'occupation':
+            return queryset.filter(
+                confirmed_endorser__is_personal=True
+            ).exclude(
+                confirmed_endorser__tags__category=3
+            )
+        elif value == 'location':
+            return queryset.filter(
+                confirmed_endorser__tags=Tag.objects.get(name='Politician')
+            ).exclude(
+                confirmed_endorser__tags__category=8
+            )
+        elif value == 'party':
+            return queryset.filter(
+                confirmed_endorser__tags=Tag.objects.get(name='Politician')
+            ).exclude(
+                confirmed_endorser__tags__category=2
+            )
 
 
 def confirm_endorsers(modeladmin, request, queryset):
@@ -181,25 +225,35 @@ class ExcludedCategoriesFilter(admin.SimpleListFilter):
 
 @admin.register(ImportedEndorsement)
 class ImportedEndorsementAdmin(admin.ModelAdmin):
-    list_display = ('get_parsed_display', 'show_endorser', 'sections',
-                    'get_import_date', 'is_confirmed', 'raw_text')
-    list_filter = (ConfirmedEndorserFilter, HasTagsFilter,
+    list_display = ('get_image', 'get_display', 'is_confirmed', 'sections',
+                    'get_import_date', 'show_raw_text')
+    list_filter = (ConfirmedEndorserFilter, NeedsFilter,
                    ExcludedCategoriesFilter,
                   'bulk_import__slug', 'sections')
     action_form = EndorserActionForm
-    actions = [add_tag, confirm_endorsers, make_personal]
+    actions = [add_tag, remove_tag, confirm_endorsers, make_personal, make_org]
+
+    def show_raw_text(self, obj):
+        return obj.raw_text[:50]
 
     def get_import_date(self, obj):
         return obj.bulk_import.created_at
 
+    def get_image(self, obj):
+        if obj.confirmed_endorser:
+            return obj.confirmed_endorser.get_image()
+    get_image.allow_tags = True
+
+    def get_display(self, obj):
+        if obj.confirmed_endorser:
+            return self.show_endorser(obj)
+        else:
+            return self.get_parsed_display(obj)
+
     def get_parsed_display(self, obj):
         parsed_attributes = obj.parse_text()
-        if obj.confirmed_endorser:
-            parsed_attributes['pk'] = obj.confirmed_endorser.pk
-        else:
-            parsed_attributes['pk'] = '--'
         return format_html(
-            u'<h3>Name: {endorser_name}({pk})</h3>'
+            u'<h3>Name: {endorser_name}</h3>'
             u'<p>Source: <a href="{citation_url}">{citation_url}</a> '
             'on {citation_date} ({citation_name})</p>'
             u'<p>Details: {endorser_details}</p>'
@@ -217,12 +271,15 @@ class ImportedEndorsementAdmin(admin.ModelAdmin):
         endorser = self.get_endorser(obj)
         if endorser:
             return format_html(
-                u'<h3><a href="{url}">{name}</a> ({type})</h3>'
-                u'<p>{description}'.format(
-                    type='personal' if endorser.is_personal else 'org',
-                    name=endorser.name,
+                u'<h3><a href="{url}">{name}</a> ({pk})</h3>'
+                u'<p>{description} - {type}</p>'
+                u'<p>{tags}</p>'.format(
                     url=endorser.get_absolute_url(),
-                    description=endorser.description
+                    name=endorser.name,
+                    pk=endorser.pk,
+                    description=endorser.description,
+                    type='personal' if endorser.is_personal else 'org',
+                    tags=' / '.join(tag.name for tag in endorser.tags.all()),
                 )
             )
 
