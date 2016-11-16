@@ -6,6 +6,12 @@
 Wikipedia page progress
 {% endblock %}
 
+{% block breadcrumbs %}
+<a class="section" href="{% url 'index' %}">Home</a>
+<i class="right angle icon divider"></i>
+Progress
+{% endblock %}
+
 
 {% block content %}
 {% if request.user.is_staff %}
