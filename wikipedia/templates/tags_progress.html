@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% load humanize %}
+
+{% block title %}
+Tagging progress
+{% endblock %}
+
+{% block breadcrumbs %}
+<a class="section" href="{% url 'index' %}">Home</a>
+<i class="right angle icon divider"></i>
+<a class="section" href="{% url 'tags-index' %}">Tags</a>
+<i class="right angle icon divider"></i>
+Progress
+{% endblock %}
+
+{% block content %}
+{% for page in sections_by_page %}
+<h3>{{ page.slug }} ({{ page.sections|length }})</h3>
+<table class="ui celled padded table">
+    <thead>
+        <tr>
+            <th style="width: 40%">Sections</th>
+            <th>Total</th>
+            <th>Imported</th>
+            <th>Needs tags</th>
+            <th>Needs org type</th>
+            <th>Needs gender</th>
+            <th>Needs race</th>
+            <th>Needs occupation</th>
+            <th>Needs location</th>
+            <th>Needs party</th>
+            <th>Common tags</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for section in page.sections %}
+        <tr>
+            <td>{{ section.name }}</td>
+            <td>{{ section.total }}</td>
+            <td>{{ section.imported }}</td>
+            {% for need in section.needs %}
+            <td>
+                {% if need.count %}
+                <a class="ui red button" href="{{ need.url }}">
+                    {{ need.count }}
+                </a>
+                {% else %}
+                <i class="large green checkmark icon"></i>
+                {% endif %}
+            </td>
+            {% endfor %}
+            <td>
+                {% if section.common_tags %}
+                <div class="ui list">
+                    {% for tag in section.common_tags %}
+                    <div class="item">{{ tag }}</div>
+                    {% endfor %}
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endfor %}
+{% endblock %}

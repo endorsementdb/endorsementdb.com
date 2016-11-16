@@ -5,6 +5,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.core.cache import cache
 from django.http import Http404
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_POST
 
@@ -714,3 +715,129 @@ def results(request):
         'candidate_counts': cached_values['candidate_counts'],
     }
     return render(request, 'results.html', context)
+
+
+org_tags = set(
+    tag.pk for tag in Tag.objects.filter(category__name='Organizations')
+)
+gender_tags = set(
+    tag.pk for tag in Tag.objects.filter(category__name='Gender')
+)
+race_tags = set(
+    tag.pk for tag in Tag.objects.filter(category__name='Race/ethnicity')
+)
+occupation_tags = set(
+    tag.pk for tag in Tag.objects.filter(category__name='Occupation')
+)
+politician_tag = Tag.objects.get(name='Politician').pk
+location_tags = set(
+    tag.pk for tag in Tag.objects.filter(category__name='States and districts')
+)
+party_tags = set(
+    tag.pk for tag in Tag.objects.filter(category__name='Party affiliation')
+)
+needs_keys = ['tags', 'org_type', 'gender', 'race', 'occupation', 'location', 'party']
+IGNORED_SECTIONS = 'Endorsements > International political figures'
+def tags_progress(request):
+    sections_by_page = []
+
+    tag_names = {
+        tag['pk']: tag['name'] for tag in Tag.objects.values('name', 'pk')
+    }
+
+    admin_url = reverse('admin:wikipedia_importedendorsement_changelist')
+
+    # Keep track of the tags common to each section.
+    section_tags = {}
+    for slug in SLUG_MAPPING:
+        section_counter = collections.defaultdict(collections.Counter)
+        imports = ImportedEndorsement.objects.filter(
+            bulk_import__slug=slug
+        ).exclude(
+            sections__startswith=IGNORED_SECTIONS
+        ).prefetch_related('confirmed_endorser', 'confirmed_endorser__tags')
+        for imported_endorsement in imports:
+            section = imported_endorsement.sections
+            section_counter[section]['total'] += 1
+
+            endorser = imported_endorsement.confirmed_endorser
+            if endorser is None:
+                continue
+
+            section_counter[section]['imported'] += 1
+
+            tag_pks = set(tag.pk for tag in endorser.tags.all())
+            if section in section_tags:
+                section_tags[section] &= tag_pks
+            else:
+                section_tags[section] = tag_pks
+
+            if not tag_pks:
+                section_counter[section]['needs_tags'] += 1
+
+            if endorser.is_personal:
+                if not gender_tags & tag_pks:
+                    section_counter[section]['needs_gender'] += 1
+                if not race_tags & tag_pks:
+                    section_counter[section]['needs_race'] += 1
+                if not occupation_tags & tag_pks:
+                    section_counter[section]['needs_occupation'] += 1
+                if politician_tag in tag_pks:
+                    if not location_tags & tag_pks:
+                        section_counter[section]['needs_location'] += 1
+                    if not party_tags & tag_pks:
+                        section_counter[section]['needs_party'] += 1
+            else:
+                if not org_tags & tag_pks:
+                    section_counter[section]['needs_org_type'] += 1
+
+        sections = []
+        for section, counter in section_counter.iteritems():
+            needs = []
+            show_section = False
+            for needs_key in needs_keys:
+                count = counter['needs_' + needs_key]
+                if count > 0:
+                    show_section = True
+                    url = (
+                        '{admin_url}?bulk_import__slug={slug}'
+                        '&needs={key}'
+                        '&sections={section}'
+                        '&is_confirmed=yes'.format(
+                            admin_url=admin_url,
+                            key=needs_key,
+                            section=section,
+                            slug=slug,
+                        )
+                    )
+                else:
+                    url = None
+
+                needs.append({
+                    'count': count,
+                    'url': url,
+                })
+
+            if not show_section:
+                continue
+
+            common_tags = [
+                tag_names[tag_pk] for tag_pk in section_tags[section]
+            ]
+            sections.append({
+                'name': section,
+                'common_tags': common_tags,
+                'total': counter['total'],
+                'imported': counter['imported'],
+                'needs': needs,
+            })
+
+        sections_by_page.append({
+            'slug': slug,
+            'sections': sections,
+        })
+
+    context = {
+        'sections_by_page': sections_by_page,
+    }
+    return render(request, 'tags_progress.html', context)

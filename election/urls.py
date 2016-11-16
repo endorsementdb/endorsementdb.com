@@ -56,6 +56,9 @@ urlpatterns = [
     url(r'^charts$',
         endorsements.views.charts, name='charts'),
     url(r'^results$', wikipedia.views.results, name='results'),
+    url(r'^tags$', endorsements.views.tags_index, name='tags-index'),
+    url(r'^tags/progress$', wikipedia.views.tags_progress,
+        name='tags-progress'),
 ]
 
 

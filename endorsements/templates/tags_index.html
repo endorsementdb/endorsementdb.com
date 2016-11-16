@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block breadcrumbs %}
+<a class="section" href="{% url 'index' %}">Home</a>
+<i class="right angle icon divider"></i>
+Tags
+{% endblock %}
+
+{% block title %}
+Endorsements by tag
+{% endblock %}
+
+{% block content %}
+<table class="ui celled padded table">
+    <thead>
+        <tr class="first-row">
+            <th style="width: 14%">Tag</th>
+            {% for candidate in candidates %}
+            <th data-rgb="{{ candidate.rgb }}"
+                class="candidate-cell"
+                style="background: rgb({{ candidate.rgb }}); color: #fff; width: 14%">
+                {{ candidate }}
+            </th>
+            {% endfor %}
+            <th style="background: #767676; color: #fff">Other</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for category in categories %}
+        <tr>
+            <td>
+                <div class="ui header">
+                    {{ category.name }}
+                </div>
+                {{ category.num_tagged }} tagged
+                ({{ category.percent_reporting|floatformat }}%)
+            </td>
+            {% for candidate in category.candidates %}
+            <td>
+                {{ candidate.num_tagged }} tagged
+                ({{ candidate.percent_reporting|floatformat }}%)
+            </td>
+            {% endfor %}
+        </tr>
+        {% for tag in category.tags %}
+        <tr>
+            <td>{{ tag.name }}</td>
+            {% for candidate in tag.candidates %}
+            <td>
+                {{ candidate.num_tagged }}
+            </td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

@@ -487,6 +487,110 @@ def random_endorser(request):
     return render(request, 'random_endorser.html', context)
 
 
+# category name: is personal
+CATEGORY_NAMES = {
+    'Gender': True,
+    'Race/ethnicity': True,
+    'Organizations': False,
+}
+def tags_index(request):
+    candidates = list(
+        Candidate.objects.filter(still_running=True).order_by('pk')
+    )
+    positions = [
+        candidate.position.pk for candidate in candidates
+    ]
+
+    categories = []
+    for category_name, is_personal in CATEGORY_NAMES.iteritems():
+        category = Category.objects.get(name=category_name)
+        category_candidates = []
+        for candidate in candidates:
+            position = candidate.position
+            endorsers = Endorser.objects.filter(
+                is_personal=is_personal,
+                current_position=position
+            )
+            category_endorsers = endorsers.filter(
+                tags__category=category
+            ).distinct()
+
+            percent_reporting = (
+                category_endorsers.count() / float(endorsers.count()) * 100
+            )
+            category_candidates.append({
+                'num_tagged': category_endorsers.count(),
+                'percent_reporting': percent_reporting
+            })
+
+        # The Other column.
+        endorsers = Endorser.objects.exclude(current_position__in=positions)
+        category_endorsers = endorsers.filter(
+            is_personal=is_personal,
+            tags__category=category
+        )
+
+        percent_reporting = (
+            category_endorsers.count() / float(endorsers.count()) * 100
+        )
+        category_candidates.append({
+            'num_tagged': category_endorsers.count(),
+            'percent_reporting': percent_reporting
+        })
+
+        # Now get the tag-specific stats
+        category_tags = []
+        for tag in category.tag_set.all():
+            tag_candidates = []
+            for candidate in candidates:
+                position = candidate.position
+                endorsers = Endorser.objects.filter(
+                    current_position=position,
+                    is_personal=is_personal,
+                )
+                tag_endorsers = endorsers.filter(tags=tag)
+                num_tagged = tag_endorsers.count()
+                tag_candidates.append({
+                    'num_tagged': num_tagged,
+                })
+
+            # The Other column.
+            endorsers = Endorser.objects.exclude(current_position__in=positions)
+            tag_endorsers = endorsers.filter(
+                tags=tag,
+                current_position=position,
+            )
+
+            tag_candidates.append({
+                'num_tagged': tag_endorsers.count(),
+            })
+
+            category_tags.append({
+                'name': tag.name,
+                'candidates': tag_candidates,
+            })
+
+        num_endorsers = Endorser.objects.count()
+        category_endorsers = Endorser.objects.filter(tags__category=category)
+        num_tagged = category_endorsers.count()
+        percent_reporting = num_tagged / float(num_endorsers) * 100
+
+        categories.append({
+            'name': category.name,
+            'candidates': category_candidates,
+            'tags': category_tags,
+            'num_tagged': num_tagged,
+            'percent_reporting': percent_reporting,
+        })
+
+    context = {
+        'candidates': candidates,
+        'categories': categories,
+    }
+
+    return render(request, 'tags_index.html', context)
+
+
 def charts(request):
     context = {}
     return render(request, 'charts.html', context)
