@@ -33,33 +33,67 @@ class Command(BaseCommand):
 
         results = {}
         for i, table_row in enumerate(soup.findAll('tr')):
-            if i < 5 or i > 55:
+            if i < 5 or i > 60:
                 continue
 
             table_cells = table_row.findAll('td')
             assert len(table_cells) == 18
 
             state = table_cells[0].find('a').string
+            if state == 'Washington, D.C.':
+                state = 'D.C.'
+            elif ',' in state:
+                # It's one of the districts. ignore.
+                continue
+            elif '(' in state:
+                state = state.partition('(')[0]
 
-            counts = {
-                'Hillary Clinton': int(
-                    (table_cells[2].string or '0').replace(',', '')
-                ),
-                'Donald Trump': int(
-                    (table_cells[5].string or '0').replace(',', '')
-                ),
-                'Gary Johnson': int(
-                    (table_cells[8].string or '0').replace(',', '')
-                ),
-                'Jill Stein': int(
-                    (table_cells[11].string or '0').replace(',', '')
-                ),
-                'Evan McMullin': int(
-                    (table_cells[14].string or '0').replace(',', '')
-                ),
+            print state
+
+            stats = {
+                'Hillary Clinton': {
+                    'count': int(
+                        (table_cells[2].string or '0').replace(',', '')
+                    ),
+                    'percent': float(
+                        (table_cells[3].string or '0').strip('%')
+                    ),
+                },
+                'Donald Trump': {
+                    'count': int(
+                        (table_cells[5].string or '0').replace(',', '')
+                    ),
+                    'percent': float(
+                        (table_cells[6].string or '0').strip('%')
+                    ),
+                },
+                'Gary Johnson': {
+                    'count': int(
+                        (table_cells[8].string or '0').replace(',', '')
+                    ),
+                    'percent': float(
+                        (table_cells[9].string or '0').strip('%')
+                    ),
+                },
+                'Jill Stein': {
+                    'count': int(
+                        (table_cells[11].string or '0').replace(',', '')
+                    ),
+                    'percent': float(
+                        (table_cells[12].string or '0').strip('%')
+                    ),
+                },
+                'Evan McMullin': {
+                    'count': int(
+                        (table_cells[14].string or '0').replace(',', '')
+                    ),
+                    'percent': float(
+                        (table_cells[15].string or '0').strip('%')
+                    ),
+                }
             }
 
-            results[state] = counts
+            results[state] = stats
 
         if options['create']:
             print "About to create", len(results)
@@ -67,13 +101,15 @@ class Command(BaseCommand):
                 slug=SLUG,
                 text=text
             )
-            for state, counts in results.iteritems():
-                for candidate, count in counts.iteritems():
+            for state, stats in results.iteritems():
+                for candidate, candidate_stats in stats.iteritems():
+                    print state
                     ImportedResult.objects.create(
                         bulk_import=bulk_import,
                         tag=Tag.objects.get(name=state),
                         candidate=Candidate.objects.get(name=candidate),
-                        count=count,
+                        count=candidate_stats['count'],
+                        percent=candidate_stats['percent'],
                     )
         else:
             print "Would have created", len(results)

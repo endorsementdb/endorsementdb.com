@@ -6,7 +6,8 @@ from django.utils.html import format_html
 from endorsements.models import Category, Tag
 from wikipedia.models import BulkImport, ImportedEndorsement, \
                              ImportedEndorser, ImportedNewspaper, \
-                             ImportedResult, ImportedRepresentative
+                             ImportedResult, ImportedRepresentative, \
+                             ElectoralVotes
 
 
 @admin.register(BulkImport)
@@ -374,3 +375,8 @@ class ImportedRepresentativeAdmin(admin.ModelAdmin):
                     tags=' / '.join(tag.name for tag in endorser.tags.all()),
                 )
             )
+
+
+@admin.register(ElectoralVotes)
+class ElectoralVotesAdmin(admin.ModelAdmin):
+    list_display = ('state', 'count')

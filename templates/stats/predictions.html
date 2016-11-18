@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% load humanize %}
+
+{% block breadcrumbs %}
+<span class="section">Stats</a>
+<i class="right angle icon divider"></i>
+Predictions
+{% endblock %}
+
+{% block title %}
+Predictions by state
+{% endblock %}
+
+
+{% block content %}
+<div class="ui icon message">
+    <i class="help icon"></i>
+    <div class="content">
+        <div class="header">Predicted results by state</div>
+        <p>
+            Based on the following models:
+        </p>
+        <p>
+            Number of senators by party, etc
+        </p>
+    </div>
+</div>
+{% for category in categories %}
+<h2 id="category-{{ forloop.index }}">{{ category.name }}</h2>
+<table class="ui celled compact table">
+    <thead>
+        <tr>
+            <th style="width: 15%">State</th>
+            <th class="center aligned" style="width: 15%">Vote spread</th>
+            {% for model in category.models %}
+            <th class="center aligned" colspan="3">{{ model.name }}</th>
+            {% endfor %}
+        </tr>
+        <tr>
+            <th rowspan="2">
+                Overall
+            </th>
+            <th class="center aligned">Actual electoral votes</th>
+            {% for model in category.models %}
+            <th class="center aligned">Predicted electoral votes</th>
+            <th class="center aligned" style="width: 5%">Correct winner</th>
+            <th class="center aligned" style="width: 5%">Correct margin size</th>
+            {% endfor %}
+        </tr>
+            <th class="center aligned">
+                <div class="ui fluid large red label">
+                    232 to 306
+                </div>
+            </th>
+            {% for model in category.models %}
+            <th class="center aligned">
+                <div class="ui fluid large {{ model.electoral_vote_winner }} label">
+                    {{ model.clinton_electoral_votes }} to
+                    {{ model.trump_electoral_votes }}
+                </div>
+            </th>
+            <th>
+                {{ model.num_correct_candidate }} / 51
+            </th>
+            <th>
+                {{ model.num_correct_size }} / 51
+            </th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for state in category.states %}
+        <tr>
+            <td>
+                <div class="ui header">
+                    {{ state.name }} ({{ state.electoral_votes }})
+                </div>
+            </td>
+            <td class="center aligned">
+                {% with votes=state.votes %}
+                <div class="ui fluid large {{ votes.color }} {{ votes.basic }} label">
+                    +{{ votes.diff }}{{ votes.suffix }}
+                </div>
+                <br />
+                ({{ votes.clinton }}{{ votes.suffix }}
+                to
+                {{ votes.trump }}{{ votes.suffix }})
+                {% endwith %}
+            </td>
+            {% for model in state.models %}
+            <td class="center aligned">
+                <div class="ui fluid large {{ model.color }} {{ model.basic }} label">
+                    +{{ model.diff }}{{ model.suffix }}
+                </div>
+                <br />
+                ({{ model.clinton }}{{ model.suffix }}
+                to
+                {{ model.trump }}{{ model.suffix }})
+            </td>
+            <td class="center aligned">
+                {% if model.correct_candidate %}
+                <i class="checkmark icon"></i>
+                {% endif %}
+            </td>
+            <td class="center aligned">
+                {% if model.correct_size %}
+                <i class="checkmark icon"></i>
+                {% endif %}
+            </td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endfor %}
+{% endblock %}

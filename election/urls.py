@@ -57,6 +57,8 @@ urlpatterns = [
     url(r'^confirm/newspapers/(?P<pk>\d+)', views.confirm_newspaper,
         name='confirm-newspaper'),
     url(r'^stats/states$', views.stats_states, name='stats-states'),
+    url(r'^stats/predictions$', views.stats_predictions,
+        name='stats-predictions'),
     url(r'^stats/tags$', views.stats_tags, name='stats-tags'),
     url(r'^stats/charts$', views.charts, name='charts'),
 ]

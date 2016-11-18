@@ -13,6 +13,8 @@ from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
+from election.predictions import MODELS
+from election.utils import predict_winner
 from endorsements.forms import EndorsementForm, SourceForm, \
                                EndorsementFormWithoutPosition, \
                                PersonalTagForm, EndorserForm, \
@@ -1442,3 +1444,147 @@ def progress_tagging(request):
 
 def progress_twitter(request):
     pass
+
+
+ENDORSER_TYPES = {
+    'clinton': Position.objects.get(slug='clinton'),
+    'trump': Position.objects.get(slug='trump'),
+    'pence': Position.objects.get(slug='pence'),
+    'another-republican': Position.objects.get(slug='another-republican'),
+    'trump-support': Position.objects.get(slug='trump-support'),
+    'senate': Tag.objects.get(name='Current Senator'),
+    'house': Tag.objects.get(name='Current U.S. Representative'),
+    'republican': Tag.objects.get(name='Republican Party'),
+    'democrat': Tag.objects.get(name='Democratic Party'),
+    'newspaper': Tag.objects.get(name='Publication')
+}
+clinton_pk = ENDORSER_TYPES['clinton'].pk
+trump_pk = ENDORSER_TYPES['trump'].pk
+@never_cache
+def stats_predictions(request):
+    endorser_pks = {}
+    for key, value in ENDORSER_TYPES.iteritems():
+        endorser_pks[key] = set(
+            value.endorser_set.values_list('id', flat=True)
+        )
+
+    state_tag_pks = set()
+    results = collections.defaultdict(dict)
+    results_query = ImportedResult.objects.filter(
+        candidate__in=[clinton_pk, trump_pk]
+    ).prefetch_related('tag', 'candidate')
+    for result in results_query:
+        results[result.tag.name][result.candidate.pk] = result.percent
+        state_tag_pks.add(result.tag.pk)
+
+    states = []
+    for state_tag in Tag.objects.filter(category_id=8).order_by('name'):
+        if state_tag.name not in results:
+            continue
+
+        # Find the actual vote spread.
+        clinton_percent = results[state_tag.name][clinton_pk]
+        trump_percent = results[state_tag.name][trump_pk]
+
+        votes = predict_winner(
+            clinton_percent,
+            trump_percent,
+            5,
+            is_percent=True
+        )
+
+        state_endorser_pks = set(
+            state_tag.endorser_set.values_list('id', flat=True)
+        )
+
+        states.append({
+            'name': state_tag.name,
+            'votes': votes,
+            'endorser_pks': state_endorser_pks,
+        })
+
+    electoral_votes = {
+        e.state.name: e.count for e in ElectoralVotes.objects.all()
+    }
+
+    # Apply all the different models.
+    categories = []
+    for category, category_models in MODELS.iteritems():
+        category_states = []
+        for state in states:
+            state_models = []
+            for model in category_models:
+                model_counts = model.apply_model(
+                    state['endorser_pks'],
+                    endorser_pks
+                )
+                model_data = predict_winner(
+                    model_counts['clinton'],
+                    model_counts['trump'],
+                    model.threshold,
+                )
+                state_models.append(model_data)
+
+            # Figure out which models were correct
+            for model_data in state_models:
+                model_data['correct_candidate'] = (
+                    model_data['color'] == state['votes']['color']
+                )
+                model_data['correct_size'] = (
+                    model_data['correct_candidate'] and
+                    model_data['basic'] == state['votes']['basic']
+                )
+
+            category_states.append({
+                'name': state['name'],
+                'votes': state['votes'],
+                'models': state_models,
+                'electoral_votes': electoral_votes[state['name']],
+            })
+
+        model_summaries = []
+        for i, model in enumerate(category_models):
+            clinton_electoral_votes = sum(
+                state['electoral_votes']
+                for state in category_states
+                if state['models'][i]['winner'] == 'clinton'
+            )
+            trump_electoral_votes = sum(
+                state['electoral_votes']
+                for state in category_states
+                if state['models'][i]['winner'] == 'trump'
+            )
+
+            if clinton_electoral_votes > 270:
+                electoral_vote_winner = 'blue'
+            elif trump_electoral_votes > 270:
+                electoral_vote_winner = 'red'
+            else:
+                electoral_vote_winner = 'grey'
+
+            model_summaries.append({
+                'name': model.name,
+                'num_correct_candidate': sum(
+                    state['models'][i]['correct_candidate']
+                    for state in category_states
+                ),
+                'num_correct_size': sum(
+                    state['models'][i]['correct_size']
+                    for state in category_states
+                ),
+                'clinton_electoral_votes': clinton_electoral_votes,
+                'trump_electoral_votes': trump_electoral_votes,
+                'electoral_vote_winner': electoral_vote_winner,
+            })
+
+        categories.append({
+            'name': category,
+            'states': category_states,
+            'models': model_summaries,
+        })
+
+    context = {
+        'categories': categories,
+    }
+
+    return render(request, 'stats/predictions.html', context)

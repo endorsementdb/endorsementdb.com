@@ -20,6 +20,7 @@ class ImportedResult(models.Model):
     tag = models.ForeignKey(Tag)
     candidate = models.ForeignKey(Candidate)
     count = models.PositiveIntegerField(default=0)
+    percent = models.DecimalField(max_digits=4, decimal_places=2)
 
     class Meta:
         unique_together = ('tag', 'candidate')
@@ -180,3 +181,21 @@ class ImportedEndorsement(models.Model):
 
     def __unicode__(self):
         return self.raw_text
+
+
+class ElectoralVotes(models.Model):
+    """Technically not imported from Wikipedia (entered manually), but this
+    model fits better in the Wikipedia app."""
+    state = models.OneToOneField(
+        Tag,
+        limit_choices_to={
+            'category': 8,
+        },
+    )
+    count = models.PositiveSmallIntegerField()
+
+    def __unicode__(self):
+        return "{state} - {count}".format(
+            state=self.state,
+            count=self.count
+        )
