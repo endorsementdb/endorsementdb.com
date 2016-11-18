@@ -70,12 +70,12 @@ View endorser
             </div>
             {% endif %}
 
-            {% for i in imported %}
+            {% for i in imported_endorsements %}
             <div class="ui message">
             <h3 class="ui header">
                 {% if request.user.is_staff %}
                 <a href="{% url 'admin:wikipedia_importedendorsement_change' i.pk %}">
-                Imported
+                Imported Endorsement
                 </a>
                 {% else %}
                     Imported from Wikipedia
@@ -93,6 +93,29 @@ View endorser
                 {{ i.raw_text }}
             </code>
             <h4>{{ i.sections }}</h4>
+            </div>
+            {% endfor %}
+
+            {% for i in imported_representatives %}
+            <div class="ui message">
+            <h3 class="ui header">
+                {% if request.user.is_staff %}
+                <a href="{% url 'admin:wikipedia_importedrepresentative_change' i.pk %}">
+                Imported Representative
+                </a>
+                {% else %}
+                    Imported from Wikipedia
+                {% endif %}
+                {% with slug=i.bulk_import.slug %}
+                <div class="sub header">
+                    <a href="http://en.wikipedia.org/wiki/{{ slug }}">
+                        {{ slug }}
+                    </a>
+                </div>
+                {% endwith %}
+            </h3>
+            <br />
+            <h4>{{ i.name }}: {{ i.state }} ({{ i.party }})</h4>
             </div>
             {% endfor %}
         </div>

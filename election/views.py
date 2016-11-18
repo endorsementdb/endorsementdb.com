@@ -22,7 +22,8 @@ from endorsements.models import Account, Endorser, Candidate, Source, Quote, \
                                 Tag, Endorsement, Category, Position
 from endorsements.templatetags.endorsement_extras import shorten
 from wikipedia.models import BulkImport, ImportedEndorsement, NEWSPAPER_SLUG, \
-                             ImportedNewspaper, ImportedResult
+                             ImportedNewspaper, ImportedResult, \
+                             ImportedRepresentative, ElectoralVotes
 
 
 def search_endorsers(request):
@@ -399,12 +400,18 @@ def view_endorser(request, pk):
     endorser = get_object_or_404(Endorser, pk=pk)
     endorsement_form = EndorsementForm()
 
-    imported = ImportedEndorsement.objects.filter(confirmed_endorser=endorser)
+    imported_endorsements = ImportedEndorsement.objects.filter(
+        confirmed_endorser=endorser
+    )
+    imported_representatives = ImportedRepresentative.objects.filter(
+        confirmed_endorser=endorser
+    )
 
     context = {
         'endorser': endorser,
         'endorsement_form': endorsement_form,
-        'imported': imported,
+        'imported_endorsements': imported_endorsements,
+        'imported_representatives': imported_representatives,
     }
 
     return render(request, 'endorsers/view.html', context)
