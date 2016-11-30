@@ -5,7 +5,7 @@ import random
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.cache import cache
-from django.db.models import Count
+from django.db.models import Count, Max, Min
 from django.http import Http404, JsonResponse
 from django.shortcuts import redirect, render, get_object_or_404
 from django.urls import reverse
@@ -54,25 +54,13 @@ def search_endorsers(request):
     })
 
 
-def get_endorsers(filter_params, sort_params):
+def get_endorsers(filter_params, sort_params, skip=0):
     filters = {}
     mode = filter_params.get('mode')
     if mode == 'personal':
         filters['is_personal'] = True
     elif mode == 'organization':
         filters['is_personal'] = False
-
-    candidate = filter_params.get('candidate')
-    show_extra_positions = False
-    if candidate:
-        try:
-            position = Position.objects.get(slug=candidate)
-            filters['current_position'] = position
-            # If this position is one of the extra positions, make sure those
-            # are visible on page load.
-            show_extra_positions = not position.show_on_load
-        except Position.DoesNotExist:
-            pass
 
     if filters:
         endorser_query = Endorser.objects.filter(**filters)
@@ -86,29 +74,67 @@ def get_endorsers(filter_params, sort_params):
         for tag_pk in tags:
             endorser_query = endorser_query.filter(tags=tag_pk)
 
+    # Before we apply any candidate-specific filters, we need a count of all
+    # the endorsers associated with each position.
+    if skip == 0:
+        position_totals = collections.Counter()
+        for endorser in endorser_query.prefetch_related('current_position'):
+            position_totals['all'] += 1
+            if endorser.current_position:
+                position = endorser.current_position
+            else:
+                endorsement = endorser.get_current_endorsement()
+                if endorsement:
+                    position = endorsement.position
+                else:
+                    position = None
+
+            if position:
+                position_totals[position.pk] += 1
+
+    candidate = filter_params.get('candidate')
+    show_extra_positions = False
+    if candidate:
+        try:
+            position = Position.objects.get(slug=candidate)
+
+            endorser_query = endorser_query.filter(current_position=position)
+            # If this position is one of the extra positions, make sure those
+            # are visible on page load.
+            show_extra_positions = not position.show_on_load
+        except Position.DoesNotExist:
+            pass
+
     sort_value = sort_params.get('value')
     sort_key = None
+    annotation_key = None
     if sort_value == 'most':
         sort_key = '-max_followers'
     elif sort_value == 'least':
         sort_key = 'max_followers'
     elif sort_value == 'newest':
-        sort_key = 'endorsement'
+        sort_key = '-sort_key'
+        annotation_key = Max('endorsement__quote__date')
     elif sort_value == 'oldest':
-        sort_key = '-endorsement'
+        sort_key = 'sort_key'
+        annotation_key = Min('endorsement__quote__date')
     elif sort_value == 'az':
         sort_key = 'name'
     elif sort_value == 'za':
         sort_key = '-name'
 
     if sort_key:
-        endorser_query = endorser_query.order_by(sort_key).distinct()
+        if annotation_key:
+            endorser_query = endorser_query.annotate(
+                sort_key=annotation_key
+            )
+        endorser_query = endorser_query.order_by(sort_key)
+        # This is only needed when ordering by endorsement (otherwise,
+        # duplicates may show up based on their endorsement date).
 
     category_names = {}
     for tag in Tag.objects.all().prefetch_related('category'):
         category_names[tag.pk] = tag.category.name
-
-    positions = {}
 
     # Figure out which endorsers are also candidates.
     candidate_endorser_pks = set()
@@ -116,31 +142,18 @@ def get_endorsers(filter_params, sort_params):
         candidate_endorser_pks.add(candidate['endorser_link'])
 
     endorser_query = endorser_query.prefetch_related(
-        'tags'
-    ).prefetch_related(
-        'endorsement_set__position'
-    ).prefetch_related(
-        'endorsement_set__quote'
-    ).prefetch_related(
-        'endorsement_set__quote__source'
-    ).prefetch_related(
-        'endorsement_set__quote__event'
-    ).prefetch_related(
+        'tags',
+        'endorsement_set__position',
+        'endorsement_set__quote',
+        'endorsement_set__quote__source',
+        'endorsement_set__quote__event',
         'account_set'
     )
     endorsers = []
-    stats = collections.defaultdict(collections.Counter)
-    position_totals = collections.Counter()
-    for i, endorser in enumerate(endorser_query):
-        stats['count']['endorsers'] += 1
+    for endorser in endorser_query[skip:skip + 12]:
         tags = []
         for tag in endorser.tags.all():
             tags.append((tag.name, tag.pk))
-            tag_name = '{category} - {name}'.format(
-                category=tag.category.name,
-                name=tag.name
-            )
-            stats['tags'][tag_name] += 1
 
         endorsements = []
         previous_position = None
@@ -150,13 +163,8 @@ def get_endorsers(filter_params, sort_params):
             position = endorsement.position
             if i == 0:
                 display = position.get_present_display()
-                stats['positions'][display + ' (currently)'] += 1
-                stats['count']['endorsements'] += 1
             else:
                 display = position.get_past_display()
-                if position != previous_position:
-                    stats['positions'][display] += 1
-                    stats['count']['endorsements'] += 1
 
             quote = endorsement.quote
             source = quote.source
@@ -186,19 +194,6 @@ def get_endorsers(filter_params, sort_params):
                 'sn': source.name,
             })
 
-        position_totals['all'] += 1
-        if endorser.current_position:
-            position = endorser.current_position
-        else:
-            endorsement = endorser.get_current_endorsement()
-            if endorsement:
-                position = endorsement.position
-            else:
-                position = None
-
-        if position:
-            position_totals[position.pk] += 1
-
         accounts = []
         max_followers = 0
         for account in endorser.account_set.all():
@@ -209,10 +204,6 @@ def get_endorsers(filter_params, sort_params):
                 'u': account.screen_name,
                 'n': shorten(account.followers_count),
             })
-
-        if max_followers > 0:
-            stats['followers']['total'] += max_followers
-            stats['followers']['count'] += 1
 
         # Don't bother checking if it's a candidate unless there are no
         # endorsements.
@@ -239,45 +230,47 @@ def get_endorsers(filter_params, sort_params):
             'i': 'missing' if endorser.missing_image else endorser.pk,
         })
 
-    if not stats['followers']:
-        stats['followers']['total'] = 0
-        stats['followers']['count'] = 0
-
-    positions = [
-        {
-            'name': 'All',
-            'slug': 'all',
-            'colour': 'grey',
-            'count': position_totals['all'],
-        }
-    ]
-    extra_positions = []
-    position_query = Position.objects.annotate(count=Count('endorser'))
-    for position in position_query.order_by('-count'):
-        if position.show_on_load:
-            to_append_to = positions
-        else:
-            to_append_to = extra_positions
-
-        if position.present_tense_prefix == 'Endorses':
-            name = position.suffix
-        else:
-            name = position.get_past_display()
-
-        to_append_to.append({
-            'name': name,
-            'slug': position.slug,
-            'colour': position.colour,
-            'count': position_totals[position.pk],
-        })
-
-    return {
+    to_return = {
         'endorsers': endorsers,
-        'stats': stats,
-        'positions': positions,
-        'extra_positions': extra_positions,
-        'show_extra_positions': show_extra_positions,
     }
+
+    # Only return position-related data if it's the first page.
+    if skip == 0:
+        positions = [
+            {
+                'name': 'All',
+                'slug': 'all',
+                'colour': 'grey',
+                'count': position_totals['all'],
+            }
+        ]
+        extra_positions = []
+        position_query = Position.objects.annotate(count=Count('endorser'))
+        for position in position_query.order_by('-count'):
+            if position.show_on_load:
+                to_append_to = positions
+            else:
+                to_append_to = extra_positions
+
+            if position.present_tense_prefix == 'Endorses':
+                name = position.suffix
+            else:
+                name = position.get_present_display()
+
+            position_count = position_totals[position.pk]
+            if position_count > 0:
+                to_append_to.append({
+                    'name': name,
+                    'slug': position.slug,
+                    'colour': position.colour,
+                    'count': position_count,
+                })
+
+        to_return['positions'] = positions
+        to_return['extra_positions'] = extra_positions
+        to_return['show_extra_positions'] = show_extra_positions
+
+    return to_return
 
 
 @csrf_exempt
@@ -337,28 +330,27 @@ def get_endorsements(request):
         filter_params = {}
         sort_params = {}
 
+    try:
+        skip = int(request.GET.get('skip', 0))
+    except ValueError:
+        skip = 0
+
     params_string = (
-        'query_{sort_by}_{sort_value}_{mode}_{candidate}_{tags}'
+        'query_{sort_by}_{sort_value}_{mode}_{candidate}_{tags}_{skip}'
     ).format(
         sort_by=sort_params.get('by', 'followers'),
         sort_value=sort_params.get('value', 'most'),
         mode=filter_params.get('mode', 'none'),
         candidate=filter_params.get('candidate', 'all'),
         tags=','.join(sorted(map(str, filter_params.get('tags', [])))),
+        skip=skip
     )
-
-    try:
-        skip = int(request.GET.get('skip', 0))
-    except ValueError:
-        skip = 0
+    print params_string
 
     results = cache.get(params_string)
     if results is None:
-        results = get_endorsers(filter_params, sort_params)
+        results = get_endorsers(filter_params, sort_params, skip)
         cache.set(params_string, results, 60 * 60)
-
-    # For pagination.
-    results['endorsers'] = results['endorsers'][skip:skip + 12]
 
     return JsonResponse(results)
 
@@ -397,7 +389,6 @@ def add_endorser(request):
     return redirect('view-endorser', pk=account.endorser.pk)
 
 
-@never_cache
 def view_endorser(request, pk):
     endorser = get_object_or_404(Endorser, pk=pk)
     endorsement_form = EndorsementForm()
@@ -624,7 +615,6 @@ SLUG_MAPPING = {
     'List_of_Donald_Trump_presidential_campaign_endorsements,_2016': 'trump',
     'List_of_Hillary_Clinton_presidential_campaign_endorsements,_2016': 'clinton',
 }
-@never_cache
 def progress_wikipedia(request):
     slug_counts = collections.defaultdict(collections.Counter)
     for e in ImportedEndorsement.objects.all().prefetch_related('bulk_import'):
@@ -1141,7 +1131,6 @@ def confirm_newspaper(request, pk):
     return redirect('confirm-newspapers')
 
 
-@never_cache
 def stats_states(request):
     candidates = list(
         Candidate.objects.filter(still_running=True).order_by('pk')
@@ -1460,7 +1449,6 @@ ENDORSER_TYPES = {
 }
 clinton_pk = ENDORSER_TYPES['clinton'].pk
 trump_pk = ENDORSER_TYPES['trump'].pk
-@never_cache
 def stats_predictions(request):
     endorser_pks = {}
     for key, value in ENDORSER_TYPES.iteritems():

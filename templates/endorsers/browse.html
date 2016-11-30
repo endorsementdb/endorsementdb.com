@@ -500,12 +500,6 @@ Browse
 
         <div class="ui divider"></div>
 
-        <div v-if="endorsers.length > 0">
-            <endorser-search-stats :stats="stats">
-            </endorser-search-stats>
-            <div class="ui divider"></div>
-        </div>
-
         <div class="ui two column stackable grid">
             <endorser-card v-for="(endorser, endorser_index) in endorsers"
                            :endorser="endorser">
@@ -875,7 +869,6 @@ new Vue({
             var current_position = $(window).scrollTop() + $(window).height();
             var doc_height_with_buffer = $(document).height() - 100;
 
-
             if(component.loaders == 0) {
                 if(current_position >= doc_height_with_buffer) {
                     component.$emit('maybe-load-more-endorsers');
@@ -889,8 +882,10 @@ new Vue({
         });
 
         component.$on('maybe-load-more-endorsers', function() {
-            if(!component.at_end) {
-                component.get_endorsers();
+            if(component.loaders == 0) {
+                if(!component.at_end) {
+                    component.get_endorsers();
+                }
             }
         });
     },
@@ -933,9 +928,11 @@ new Vue({
                 contentType: 'application/json'
             })
             .done(function(response) {
-                component.positions = response.positions;
-                component.extra_positions = response.extra_positions;
-                component.show_extra_positions = response.show_extra_positions;
+                if (response.positions) {
+                    component.positions = response.positions;
+                    component.extra_positions = response.extra_positions;
+                    component.show_extra_positions = response.show_extra_positions;
+                }
 
                 var endorsers = response.endorsers;
                 component.endorsers = component.endorsers.concat(endorsers);
@@ -943,46 +940,6 @@ new Vue({
                 if(endorsers.length < 12) {
                     component.at_end = true;
                 }
-
-                var sorted_tags = [];
-                for(var tag_name in response.stats.tags) {
-                    sorted_tags.push({
-                        name: tag_name,
-                        count: response.stats.tags[tag_name],
-                    });
-                }
-                sorted_tags.sort(function(x,y) {
-                    return y.count - x.count;
-                });
-                response.stats.tags = sorted_tags;
-
-                var sorted_positions = [];
-                for(var position_name in response.stats.positions) {
-                    var icon = '';
-
-                    if(position_name.indexOf('Endorse') >= 0) icon = 'green';
-                    if(position_name.indexOf('Support') >= 0) icon = 'blue';
-                    if(position_name.indexOf('Oppose') >= 0) icon = 'red';
-
-                    sorted_positions.push({
-                        name: position_name,
-                        icon: icon,
-                        count: response.stats.positions[position_name],
-                    });
-                }
-                sorted_positions.sort(function(x,y) {
-                    return y.count - x.count;
-                });
-                response.stats.positions = sorted_positions;
-
-                var avg_followers = response.stats.followers.total;
-                if (avg_followers > 0) {
-                    avg_followers /= response.stats.followers.count;
-                    avg_followers = Math.floor(avg_followers);
-                    response.stats.followers.average = avg_followers;
-                }
-
-                component.stats = response.stats;
 
                 component.loaders -= 1;
             });
