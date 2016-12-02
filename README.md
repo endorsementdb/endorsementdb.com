@@ -60,6 +60,12 @@ progress at <https://endorsementdb.com/progress/wikipedia>
 
 (I may be missing steps here -- feel free to correct this.)
 
+### data.world
+
+If you just want access to the raw data without having to run the app locally,
+you can find CSV files containing pretty much all the endorsement data here:
+<https://data.world/dellsystem/us-election-endorsements-16>
+
 ## Get involved
 
 This is a pretty monumental undertaking, and I could use all the help I can
