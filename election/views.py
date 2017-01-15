@@ -1305,28 +1305,28 @@ def stats_states(request):
     return render(request, 'stats/states.html', context)
 
 
-org_tags = set(
-    tag.pk for tag in Tag.objects.filter(category__name='Organizations')
-)
-gender_tags = set(
-    tag.pk for tag in Tag.objects.filter(category__name='Gender')
-)
-race_tags = set(
-    tag.pk for tag in Tag.objects.filter(category__name='Race/ethnicity')
-)
-occupation_tags = set(
-    tag.pk for tag in Tag.objects.filter(category__name='Occupation')
-)
-politician_tag = Tag.objects.get(name='Politician').pk
-location_tags = set(
-    tag.pk for tag in Tag.objects.filter(category__name='States and districts')
-)
-party_tags = set(
-    tag.pk for tag in Tag.objects.filter(category__name='Party affiliation')
-)
-needs_keys = ['tags', 'org_type', 'gender', 'race', 'occupation', 'location', 'party']
-IGNORED_SECTIONS = 'Endorsements > International political figures'
 def progress_tagging(request):
+    org_tags = set(
+        tag.pk for tag in Tag.objects.filter(category__name='Organizations')
+    )
+    gender_tags = set(
+        tag.pk for tag in Tag.objects.filter(category__name='Gender')
+    )
+    race_tags = set(
+        tag.pk for tag in Tag.objects.filter(category__name='Race/ethnicity')
+    )
+    occupation_tags = set(
+        tag.pk for tag in Tag.objects.filter(category__name='Occupation')
+    )
+    politician_tag = Tag.objects.get(name='Politician').pk
+    location_tags = set(
+        tag.pk for tag in Tag.objects.filter(category__name='States and districts')
+    )
+    party_tags = set(
+        tag.pk for tag in Tag.objects.filter(category__name='Party affiliation')
+    )
+    needs_keys = ['tags', 'org_type', 'gender', 'race', 'occupation', 'location', 'party']
+    IGNORED_SECTIONS = 'Endorsements > International political figures'
     sections_by_page = []
 
     tag_names = {
@@ -1435,21 +1435,22 @@ def progress_twitter(request):
     pass
 
 
-ENDORSER_TYPES = {
-    'clinton': Position.objects.get(slug='clinton'),
-    'trump': Position.objects.get(slug='trump'),
-    'pence': Position.objects.get(slug='pence'),
-    'another-republican': Position.objects.get(slug='another-republican'),
-    'trump-support': Position.objects.get(slug='trump-support'),
-    'senate': Tag.objects.get(name='Current Senator'),
-    'house': Tag.objects.get(name='Current U.S. Representative'),
-    'republican': Tag.objects.get(name='Republican Party'),
-    'democrat': Tag.objects.get(name='Democratic Party'),
-    'newspaper': Tag.objects.get(name='Publication')
-}
-clinton_pk = ENDORSER_TYPES['clinton'].pk
-trump_pk = ENDORSER_TYPES['trump'].pk
 def stats_predictions(request):
+    ENDORSER_TYPES = {
+        'clinton': Position.objects.get(slug='clinton'),
+        'trump': Position.objects.get(slug='trump'),
+        'pence': Position.objects.get(slug='pence'),
+        'another-republican': Position.objects.get(slug='another-republican'),
+        'trump-support': Position.objects.get(slug='trump-support'),
+        'senate': Tag.objects.get(name='Current Senator'),
+        'house': Tag.objects.get(name='Current U.S. Representative'),
+        'republican': Tag.objects.get(name='Republican Party'),
+        'democrat': Tag.objects.get(name='Democratic Party'),
+        'newspaper': Tag.objects.get(name='Publication')
+    }
+    clinton_pk = ENDORSER_TYPES['clinton'].pk
+    trump_pk = ENDORSER_TYPES['trump'].pk
+
     endorser_pks = {}
     for key, value in ENDORSER_TYPES.iteritems():
         endorser_pks[key] = set(
